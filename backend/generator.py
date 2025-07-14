@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from dotenv import load_dotenv
 from backend.templates import TEMPLATES, PLACEHOLDER_ALIASES
@@ -56,7 +57,7 @@ You are a legal assistant. Summarize the following incident in a {tone} legal to
 
 def recommend_ipc_llm(description: str) -> list:
     prompt = f"""
-You are a legal expert assistant. Based on the following case description, recommend the most relevant IPC (Indian Penal Code) sections with their section number, title, and a brief description why they apply:
+You are a legal expert assistant. Based on the following case description, recommend the most relevant IPC (Indian Penal Code) sections (Top 4 sections) with their section number, title, and a brief description why they apply:
 
 Case Description:
 ""{description}""
@@ -99,6 +100,12 @@ def fill_notice_template(notice_type: str, data: dict, summarized_body: str) -> 
 
     return normalize_fuzzy_placeholders(filled, data)
 
+
+def clean_legal_notice(text):
+
+    text = re.sub(r'\*\*', '', text)
+    text = re.sub(r'["“”]', '', text)
+    return text.strip()
 
 
 def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = False) -> str:
@@ -146,6 +153,62 @@ Respond only with the formatted notice.
     notice_text = call_groq(prompt)
 
     if return_ipc:
-        return ipc_section_text, notice_text
+        return clean_legal_notice(ipc_section_text), clean_legal_notice(notice_text)
 
-    return notice_text
+    return clean_legal_notice(notice_text)
+
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import tempfile
+import os
+
+def generate_pdf_from_text(text: str) -> str:
+    """
+    Generates a PDF from the given text and returns the file path.
+    """
+    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    c = canvas.Canvas(temp_pdf.name, pagesize=A4)
+
+    width, height = A4
+    x_margin = 50
+    y_margin = height - 50
+    line_height = 15
+
+    for line in text.split('\n'):
+        c.drawString(x_margin, y_margin, line)
+        y_margin -= line_height
+        if y_margin < 50:  
+            c.showPage()
+            y_margin = height - 50
+
+    c.save()
+    return temp_pdf.name
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+
+def save_to_pdf(text, file_path="generated_notice.pdf"):
+    doc = SimpleDocTemplate(file_path, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    
+    base_styles = getSampleStyleSheet()
+    
+ 
+    custom_style = ParagraphStyle(
+        name='CustomStyle',
+        parent=base_styles['Normal'],
+        fontSize=12,
+        leading=12, 
+        spaceAfter=12
+    )
+
+    story = []
+    for line in text.split("\n"):
+        if line.strip(): 
+            story.append(Paragraph(line.strip(), custom_style))
+        else:
+            story.append(Spacer(1, 12))
+
+    doc.build(story)
