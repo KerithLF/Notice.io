@@ -57,7 +57,7 @@ You are a legal assistant. Summarize the following incident in a {tone} legal to
 
 def recommend_ipc_llm(description: str) -> list:
     prompt = f"""
-You are a legal expert assistant. Based on the following case description, recommend the most relevant IPC (Indian Penal Code) sections (Top 4 sections) with their section number, title, and a brief description why they apply:
+You are a legal expert assistant. Based on the following case description, recommend the most relevant IPC (Indian Penal Code) sections (Top 5 sections) with their section number, title, and a brief description why they apply:
 
 Case Description:
 ""{description}""
@@ -140,13 +140,61 @@ You are a legal assistant. Based on the following information, generate a comple
 Sign the notice as:
 {data.get('signature')}
 
-The notice should include:
+The notice should include the headings (first letter capital and other letters lowercase):
 - A subject
 - Formal opening
 - Mention of legal grounds or dispute
 - Instructions or demands
 - Consequences of not responding
 - Signature line
+
+Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.
+in this format:
+
+                                    LEGAL NOTICE
+
+ Subject: Demand for Return of Security Deposit and Notice of Intention to File Suit
+ Date: 2025-07-13
+ To:
+ Mr. Suresh
+ S/o [Insert Father's Name]
+ Address: Raidurg
+ Space Unit No. [Insert Unit Number] on [Insert Building Name] at [Insert Address]
+
+ Dear Mr. Suresh,
+
+ We, Google, through its Director Mr. Ramesh, were formerly your tenant at Space Unit No.
+ [Insert Unit Number] on [Insert Building Name] at [Insert Address] (hereinafter referred to as
+ Premises) which we vacated from [Insert Date] pursuant to and recorded with our lease dated
+ [Insert Date]. Unfortunately, we have not yet received the return of our security deposit in the
+ amount of Rs. 380,000/- (Rupees Three Hundred Eighty Thousand Only) for that rental
+ premises.
+
+ You, as the landlord, are required to return to us, as the tenant, simultaneously on the same
+ day (i.e. [Insert Date]) the following:
+ 1. Our full security deposit: Rs. 380,000/- (Rupees Three Hundred Eighty Thousand Only)
+ 2. All of the tenant/lessee obligations in relation to this property have been fulfilled. In
+ particular, no damage has been caused to the property and there is no outstanding rent. All
+ conditions for refund of the security deposit have been fulfilled.
+
+ Please send the cheque payable to us, in amount of Rs. 380,000/- (Rupees Three Hundred
+ Eighty Thousand Only) to our address listed above within 10 days of your receipt of this letter.
+
+ If you fail to comply with this demand, we will have no choice but to file suit for the recovery of
+ the security deposit, plus trouble damages, court costs, and lawyer's fees.
+
+ If you have any questions regarding this letter, please do not hesitate to contact us at:
+
+ Name of the Company: Google
+ Address: Madhapur
+ Contact No.: [Insert Contact Number]
+ E-mail Id: [Insert Email Id]
+
+Thank you for your prompt attention to this matter.
+
+ Sincerely,
+ Ramesh
+ Director, Google
 
 Respond only with the formatted notice.
 """
@@ -185,6 +233,7 @@ def generate_pdf_from_text(text: str) -> str:
     c.save()
     return temp_pdf.name
 
+
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
@@ -200,7 +249,7 @@ def save_to_pdf(text, file_path="generated_notice.pdf"):
         name='CustomStyle',
         parent=base_styles['Normal'],
         fontSize=12,
-        leading=12, 
+        leading=16, 
         spaceAfter=12
     )
 
@@ -212,3 +261,40 @@ def save_to_pdf(text, file_path="generated_notice.pdf"):
             story.append(Spacer(1, 12))
 
     doc.build(story)
+
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+def send_notice_email(sender_email, sender_password, recipient_email, subject, notice_text):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = recipient_email
+        msg['Subject'] = subject
+
+        msg.attach(MIMEText(notice_text, 'plain'))
+
+        # Use Gmail SMTP as example
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return "✅ Email sent successfully!"
+    except Exception as e:
+        return f"❌ Email failed: {e}"
+
+
+import urllib.parse
+import webbrowser
+
+def share_notice_whatsapp(phone_number, notice_text):
+    try:
+        encoded_text = urllib.parse.quote(notice_text)
+        url = f"https://wa.me/{phone_number}?text={encoded_text}"
+        webbrowser.open(url) 
+        return "✅ WhatsApp link opened!"
+    except Exception as e:
+        return f"❌ WhatsApp sharing failed: {e}"

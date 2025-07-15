@@ -1,7 +1,7 @@
 import gradio as gr
-from backend.generator import create_notice, generate_pdf_from_text, save_to_pdf
+from backend.generator import create_notice, generate_pdf_from_text, save_to_pdf, send_notice_email, share_notice_whatsapp
 from backend.parsing import extract_text_from_any
-from backend.templates import TEMPLATES
+from backend.templates import TEMPLATES, LITIGATION_FIELDS
 import tempfile
 
 def handle_notice(file, selected_type, issue_date, problem_date, case_description, notice_period,
@@ -70,14 +70,23 @@ with gr.Blocks() as demo:
             recipient_title = gr.Textbox(label="Recipient Title (optional)")
             recipient_company = gr.Textbox(label="Recipient Company (optional)")
             signature = gr.Textbox(label="Signature")
+            sender_email_box = gr.Textbox(label="Sender Email")
+            sender_pass_box = gr.Textbox(label="Sender Email Password", type="password")
+            recipient_email_box = gr.Textbox(label="Recipient Email")
+            whatsapp_number_box = gr.Textbox(label="WhatsApp Number (with country code, e.g. 919876543210)")
+            whatsapp_status_box = gr.Textbox(label="WhatsApp Status", interactive=False, visible=False)
+            email_status_box = gr.Textbox(label="Email Status", interactive=False, visible=False)
 
             generate_button = gr.Button("Generate Legal Notice")
+            send_email_btn = gr.Button("Send Email")
+            send_whatsapp_btn = gr.Button("Share on WhatsApp")
+
 
         with gr.Column():
             notice_output = gr.Textbox(label="⚖️ Recommended IPC Sections", lines=10)
             ipc_output = gr.TextArea(label="📝 Generated Legal Notice (Editable)", lines=50, max_lines=None, interactive=True)
             download_button = gr.Button("⬇️ Download as PDF")
-            download_file = gr.File(label="📄 Click to Download PDF")
+            download_file = gr.File(label="📄 Click to Download PDF")          
 
     generate_button.click(
         fn=handle_notice,
@@ -93,5 +102,18 @@ with gr.Blocks() as demo:
         inputs=[ipc_output],
         outputs=[download_file]
     )
+
+    send_email_btn.click(
+        fn=lambda s_email, s_pass, r_email, text: send_notice_email(s_email, s_pass, r_email, "Legal Notice", text),
+        inputs=[sender_email_box, sender_pass_box, recipient_email_box, generate_button],
+        outputs=ipc_output
+)
+
+    send_whatsapp_btn.click(
+    fn=lambda number, text: share_notice_whatsapp(number, text),
+    inputs=[whatsapp_number_box, generate_button],
+    outputs=ipc_output
+)
+
 
 demo.launch()

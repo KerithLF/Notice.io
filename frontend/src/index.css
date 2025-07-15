@@ -1,0 +1,195 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --header-bg: #3c222f;
+  --text-color: #d6a767;
+  --logo-bg: #3c222f;
+  --logo-color: #d9a865;
+  --optional-bg: #e6d0b1;
+  --black: #000000;
+  --white: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  color: var(--black);
+  background-color: var(--white);
+}
+
+.input-style {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D6A767] focus:border-transparent;
+}
+
+.eye-toggle {
+  @apply absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600;
+}
+
+.btn-primary {
+  @apply bg-[#D6A767] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#C19653] transition-colors duration-300;
+}
+
+.btn-secondary {
+  @apply bg-[#3C222F] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#4A2A37] transition-colors duration-300;
+}
+
+.btn-outline {
+  @apply border-2 border-[#D6A767] text-[#D6A767] px-6 py-3 rounded-lg font-semibold hover:bg-[#D6A767] hover:text-white transition-all duration-300;
+}
+
+.section-gold {
+  background: linear-gradient(135deg, #d6a767 0%, #e8c088 100%);
+}
+
+.section-dark {
+  background: linear-gradient(135deg, #3c222f 0%, #4a2a37 100%);
+}
+
+.section-optional {
+  background-color: #e6d0b1;
+}
+
+.text-gold {
+  color: #d6a767;
+}
+
+.text-logo {
+  color: #d9a865;
+}
+
+.text-header {
+  color: #d6a767;
+}
+
+.border-gold {
+  border-color: #d6a767;
+}
+
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    rgba(214, 167, 103, 0.1) 0%,
+    rgba(255, 255, 255, 0.9) 100%
+  );
+}
+
+.header-dark {
+  background-color: #3c222f;
+}
+
+.focus-gold:focus {
+  @apply ring-2 ring-[#D6A767] border-transparent;
+}
+
+/* Template selection animations */
+.template-card {
+  @apply transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg;
+}
+
+.template-card.selected {
+  @apply ring-2 ring-[#D6A767] shadow-lg scale-105;
+}
+
+/* Drag and drop animations */
+.drag-item {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.drag-item:hover {
+  @apply transform scale-105 shadow-md;
+}
+
+.drag-item.dragging {
+  @apply transform rotate-3 scale-110 shadow-xl opacity-80;
+}
+
+.drop-zone {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.drop-zone.drag-over {
+  @apply bg-[#E6D0B1] border-[#D6A767] border-2 border-dashed transform scale-105;
+}
+
+/* Recommendation overlay */
+.recommendation-overlay {
+  @apply absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 transition-opacity duration-300;
+}
+
+.recommendation-overlay.show {
+  @apply opacity-100;
+}
+
+/* Pulse animation for recommendations */
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(214, 167, 103, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(214, 167, 103, 0);
+  }
+}
+
+.pulse-gold {
+  animation: pulse-gold 2s infinite;
+}
+
+/* Slide in animation for IPC sections */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+/* Bounce animation for dropped items */
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+/* Typing indicator */
+@keyframes typing {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.typing-indicator {
+  animation: typing 1.5s infinite;
+}
