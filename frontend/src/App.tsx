@@ -4,6 +4,7 @@ import { LandingPage } from './pages/LandingPage';
 import { NoticePage } from './pages/NoticePage';
 import { CreateNoticePage } from './pages/CreateNoticePage';
 import { Navbar } from './components/Navbar';
+import NoticeForm from "./components/NoticeForm";
 
 function App() {
   return (

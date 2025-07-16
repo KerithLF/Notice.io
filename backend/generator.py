@@ -35,11 +35,17 @@ You are a legal assistant. Classify the notice type for the following case:
 \"\"\"{description}\"\"\"
 
 Choose from:
-- Eviction
 - Payment Recovery
 - Employment Termination
 - Contract Breach
 - Loan Default
+- Eviction Notice
+- Loan Default Notice
+- Cheque Bounce / Dishonour of Cheque Notice
+- Consumer Complaint Notice
+- Defamation / Harassment Notice
+- Lease Termination Notice
+- Legal Demand Notice (General)
 """
     return call_groq(prompt)
 
@@ -108,11 +114,28 @@ def clean_legal_notice(text):
     return text.strip()
 
 
-def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = False) -> str:
-
-    ipc_sections = recommend_ipc_llm(data.get("incident_description"))
+def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = False) -> str | tuple[str, str]:
+    """
+    Create a legal notice based on the provided data.
+    
+    Args:
+        data (dict): Dictionary containing notice details
+        tone (str, optional): Tone of the notice. Defaults to "formal"
+        selected_type (str, optional): Type of notice. Defaults to None
+        return_ipc (bool, optional): Whether to return IPC sections. Defaults to False
+        
+    Returns:
+        Union[str, Tuple[str, str]]: Either the notice text, or a tuple of (ipc_sections, notice_text)
+    """
+    if not data.get("incident_description"):
+        raise ValueError("incident_description is required in data")
+        
+    ipc_sections = recommend_ipc_llm(data["incident_description"])
     ipc_section_text = "\n".join(f"- {sec}" for sec in ipc_sections)
 
+    # Print for debugging
+    print(f"Creating notice with description: {data['incident_description']}")
+    
     prompt = f"""
 You are a legal assistant. Based on the following information, generate a complete legal notice in a {tone} tone:
 
@@ -148,53 +171,7 @@ The notice should include the headings (first letter capital and other letters l
 - Consequences of not responding
 - Signature line
 
-Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.
-in this format:
-
-                                    LEGAL NOTICE
-
- Subject: Demand for Return of Security Deposit and Notice of Intention to File Suit
- Date: 2025-07-13
- To:
- Mr. Suresh
- S/o [Insert Father's Name]
- Address: Raidurg
- Space Unit No. [Insert Unit Number] on [Insert Building Name] at [Insert Address]
-
- Dear Mr. Suresh,
-
- We, Google, through its Director Mr. Ramesh, were formerly your tenant at Space Unit No.
- [Insert Unit Number] on [Insert Building Name] at [Insert Address] (hereinafter referred to as
- Premises) which we vacated from [Insert Date] pursuant to and recorded with our lease dated
- [Insert Date]. Unfortunately, we have not yet received the return of our security deposit in the
- amount of Rs. 380,000/- (Rupees Three Hundred Eighty Thousand Only) for that rental
- premises.
-
- You, as the landlord, are required to return to us, as the tenant, simultaneously on the same
- day (i.e. [Insert Date]) the following:
- 1. Our full security deposit: Rs. 380,000/- (Rupees Three Hundred Eighty Thousand Only)
- 2. All of the tenant/lessee obligations in relation to this property have been fulfilled. In
- particular, no damage has been caused to the property and there is no outstanding rent. All
- conditions for refund of the security deposit have been fulfilled.
-
- Please send the cheque payable to us, in amount of Rs. 380,000/- (Rupees Three Hundred
- Eighty Thousand Only) to our address listed above within 10 days of your receipt of this letter.
-
- If you fail to comply with this demand, we will have no choice but to file suit for the recovery of
- the security deposit, plus trouble damages, court costs, and lawyer's fees.
-
- If you have any questions regarding this letter, please do not hesitate to contact us at:
-
- Name of the Company: Google
- Address: Madhapur
- Contact No.: [Insert Contact Number]
- E-mail Id: [Insert Email Id]
-
-Thank you for your prompt attention to this matter.
-
- Sincerely,
- Ramesh
- Director, Google
+Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.:
 
 Respond only with the formatted notice.
 """
@@ -219,48 +196,80 @@ def generate_pdf_from_text(text: str) -> str:
     c = canvas.Canvas(temp_pdf.name, pagesize=A4)
 
     width, height = A4
-    x_margin = 50
-    y_margin = height - 50
-    line_height = 15
+    x_margin = 40
+    y_margin = height - 40
+    line_height = 10
 
     for line in text.split('\n'):
         c.drawString(x_margin, y_margin, line)
         y_margin -= line_height
-        if y_margin < 50:  
+        if y_margin < 40:  
             c.showPage()
-            y_margin = height - 50
+            y_margin = height - 40
 
     c.save()
     return temp_pdf.name
 
 
+
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.units import inch
 
-def save_to_pdf(text, file_path="generated_notice.pdf"):
-    doc = SimpleDocTemplate(file_path, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
-    
-    base_styles = getSampleStyleSheet()
-    
- 
-    custom_style = ParagraphStyle(
-        name='CustomStyle',
-        parent=base_styles['Normal'],
-        fontSize=12,
-        leading=16, 
-        spaceAfter=12
+def save_to_pdf(formatted_text, file_path="Legal-Notice.pdf"):
+    # Set up the document
+    doc = SimpleDocTemplate(
+        file_path,
+        pagesize=A4,
+        rightMargin=60,  # 1 inch
+        leftMargin=60,   # 1 inch
+        topMargin=60,
+        bottomMargin=60
     )
 
+    styles = getSampleStyleSheet()
+    # Body text style
+    body_style = ParagraphStyle(
+        name='Body',
+        parent=styles['Normal'],
+        fontName="Times-Roman",
+        fontSize=12,
+        leading=16,       # line spacing
+        alignment=TA_LEFT,
+        spaceAfter=10
+    )
+    # Heading style (e.g., Subject, Date)
+    heading_style = ParagraphStyle(
+        name='Heading',
+        parent=styles['Normal'],
+        fontName="Times-Bold",
+        fontSize=12,
+        leading=16,
+        alignment=TA_LEFT,
+        spaceAfter=10
+    )
+
+    # Build the content
     story = []
-    for line in text.split("\n"):
-        if line.strip(): 
-            story.append(Paragraph(line.strip(), custom_style))
-        else:
+
+    # Split into paragraphs
+    for line in formatted_text.split("\n"):
+        line = line.strip()
+        if not line:
             story.append(Spacer(1, 12))
+            continue
+        # Bold for lines starting with known headings
+        if line.lower().startswith(("date:", "subject:", "to", "and", "dear", "sincerely", "contact no.", "address:", "name of the company:", "e-mail id:")):
+            story.append(Paragraph(line, heading_style))
+        else:
+            story.append(Paragraph(line, body_style))
 
     doc.build(story)
+    return file_path
+
+
 
 
 import smtplib

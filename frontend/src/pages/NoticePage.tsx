@@ -3,6 +3,7 @@ import { DynamicForm } from '../components/DynamicForm';
 import { NoticePreview } from '../components/NoticePreview';
 import { NoticeEditor } from '../components/NoticeEditor';
 import { NoticeData } from '../types/notice';
+import { generateNotice } from '../api/notice'; // Make sure this import is present
 
 export const NoticePage: React.FC = () => {
   const [formData, setFormData] = useState<NoticeData>({
@@ -11,42 +12,41 @@ export const NoticePage: React.FC = () => {
     subject: '',
     issueDate: '',
     caseDescription: '',
-    customFields: {}
+    customFields: {},
+    selectedTemplate: '' // ✅ Fix: added missing property
   });
-  
+
+
   const [generatedNotice, setGeneratedNotice] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotice, setEditedNotice] = useState<string>('');
 
-  const handleFormSubmit = (data: NoticeData) => {
+  const handleFormSubmit = async (data: NoticeData) => {
     setFormData(data);
-    // Mock LLM generation
-    const mockNotice = generateMockNotice(data);
-    setGeneratedNotice(mockNotice);
-    setEditedNotice(mockNotice);
-  };
 
-  const generateMockNotice = (data: NoticeData): string => {
-    const tonePrefix = data.tone === 'formal' ? 'FORMAL LEGAL NOTICE' : 'NOTICE';
-    
-    return `${tonePrefix}
+    // Prepare FormData for the backend
+    const fd = new FormData();
+    fd.append("selected_type", data.litigationType || data.selectedTemplate || "");
+    fd.append("issue_date", data.issueDate || "");
+    fd.append("problem_date", data.problemDate || "");
+    fd.append("case_description", data.caseDescription || "");
+    fd.append("notice_period", data.noticePeriod || "");
+    fd.append("total_amount", data.totalAmount || "");
+    fd.append("sender_name", data.senderName || "");
+    fd.append("sender_address", data.senderAddress || "");
+    fd.append("sender_title", data.senderTitle || "");
+    fd.append("sender_company", data.senderCompany || "");
+    fd.append("recipient_name", data.recipientName || "");
+    fd.append("recipient_address", data.recipientAddress || "");
+    fd.append("recipient_title", data.recipientTitle || "");
+    fd.append("recipient_company", data.recipientCompany || "");
+    fd.append("signature", data.signature || "");
+    fd.append("tone", data.tone || "formal");
 
-Subject: ${data.subject}
-
-Date: ${data.issueDate}
-
-TO WHOM IT MAY CONCERN,
-
-This is to inform you that ${data.caseDescription}
-
-The matter pertains to ${data.litigationType} proceedings and requires immediate attention.
-
-You are hereby notified to take necessary action within the prescribed time limit failing which appropriate legal action will be initiated against you.
-
-This notice is issued under the relevant provisions of law.
-
-Yours faithfully,
-[Legal Representative]`;
+    // Call backend API
+    const result = await generateNotice(fd);
+    setGeneratedNotice(result.notice);
+    setEditedNotice(result.notice);
   };
 
   return (
@@ -63,13 +63,13 @@ Yours faithfully,
 
         <div className="space-y-6">
           {generatedNotice && !isEditing && (
-            <NoticePreview 
-              notice={generatedNotice} 
+            <NoticePreview
+              notice={generatedNotice}
               onEdit={() => setIsEditing(true)}
               formData={formData}
             />
           )}
-          
+
           {isEditing && (
             <NoticeEditor
               notice={editedNotice}

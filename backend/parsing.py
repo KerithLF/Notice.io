@@ -5,6 +5,8 @@ import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image
 
+file_path = r"C:\Users\DELL\Desktop\Notice_groq\backend\ap council.pdf"
+
 def extract_text_from_docx(file_path):
     doc = docx.Document(file_path)
     return "\n".join(p.text for p in doc.paragraphs)
@@ -39,3 +41,20 @@ def extract_text_from_any(file_path):
         return extract_text_from_image(file_path)
     else:
         raise ValueError(f"Unsupported file type: {ext}")
+
+
+# # ...existing code...
+
+# if __name__ == "__main__":
+#     import sys
+#     # if len(sys.argv) < 2:
+#     #     print("Usage: python parsing.py <file_path>")
+#     # else:
+#     # file_path = sys.argv[1]
+#     try:
+#         print(f"Extracting text from: {file_path}")
+#         parsed_data = extract_text_from_any(file_path)
+#         print("Parsed Data:\n")
+#         print(parsed_data)
+#     except Exception as e:
+#         print(f"Error: {e}")

@@ -119,8 +119,133 @@ Sincerely,
 {signature}
 {title}
 {company}
+""",
+
+    "Cheque Bounce": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Cheque Bounce / Dishonour of Cheque Notice
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name} with reference to a dishonoured cheque dated {problem_date}.
+
+{summarized_body}
+
+You are hereby demanded to make good the payment within {notice_period}, failing which legal proceedings under applicable law will be initiated.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+""",
+
+    "Consumer Complaint": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Consumer Complaint Notice
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, residing at {sender_address}, in regard to a complaint related to {problem_date}.
+
+{summarized_body}
+
+You are hereby called upon to resolve the issue or provide compensation within {notice_period}, failing which I shall be constrained to approach the Consumer Forum.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Defamation or Harassment": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Defamation / Harassment Notice
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name} concerning incidents that occurred on {problem_date} which have caused harm and distress.
+
+{summarized_body}
+
+You are hereby instructed to cease and desist such actions and provide a written apology within {notice_period}. Non-compliance will result in legal proceedings.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Lease Termination": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Lease Termination Notice
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, residing at {sender_address}, to inform you of the termination of lease agreement dated {problem_date}.
+
+{summarized_body}
+
+You are required to vacate and hand over possession within {notice_period}, failing which legal steps will be taken.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Legal Demand": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Legal Demand Notice
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, concerning a legal demand arising on {problem_date}.
+
+{summarized_body}
+
+You are hereby instructed to comply with the demand within {notice_period}, failing which I shall initiate legal action at your cost and risk.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
 """
 }
+
 
 PLACEHOLDER_ALIASES = {
     "your name": "sender_name",
