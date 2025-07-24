@@ -61,7 +61,7 @@ Using the rules below, generate a complete, professionally worded legal notice i
 
 RULES AND STRUCTURE TO FOLLOW:
 
-1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of {{Lawyer’s Name}}]").
+1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
 2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
 3. On the top-right corner, mention the date of issuing the notice.
 4. After that, clearly mention the recipient details:
@@ -89,7 +89,7 @@ TONE AND STYLE:
 
 INPUT DATA:
 - Sender details: {{sender_details}}
-- Recipient details: {{recipient_details}} or Company details: {{recipient_company_details}}
+- Recipient details: {{recipient_details}}
 - Event description: {{event_description}}
 - Applicable laws/acts: {{applicable_laws}}
 - Time limit for response: {{time_limit}}
