@@ -1,180 +1,293 @@
-import React, { useEffect, useState } from "react";
-import { generateNotice, getTemplates, getLitigationFields } from "../api/notice";
+import React, { useState } from 'react';
+import DynamicForm from './DynamicForm';
 
-// Fetch IPC recommendations based on subject
-async function getIpcRecommendations(subject: string) {
-  const res = await fetch(`http://localhost:8000/ipc-recommendations?subject=${encodeURIComponent(subject)}`);
-  return res.json();
+interface NoticeFormProps {
+  onSubmit: (data: any) => void;
 }
 
-const NoticeForm: React.FC = () => {
-  const [templates, setTemplates] = useState<string[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [fields, setFields] = useState<{ name: string; label: string }[]>([]);
-  const [formData, setFormData] = useState<{ [key: string]: any }>({});
-  const [notice, setNotice] = useState<string>("");
-  const [ipc, setIpc] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [ipcRecommendations, setIpcRecommendations] = useState<string[]>([]);
-  const [subjectLoading, setSubjectLoading] = useState(false);
+const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
+  const [formData, setFormData] = useState({
+    selected_type: '',
+    issue_date: '',
+    problem_date: '',
+    case_description: '',
+    notice_period: '',
+    total_amount: '',
+    sender_name: '',
+    sender_address: '',
+    sender_title: '',
+    sender_company: '',
+    recipient_name: '',
+    recipient_address: '',
+    recipient_title: '',
+    recipient_company: '',
+    signature: '',
+    tone: 'formal',
+  });
 
-  useEffect(() => {
-    getTemplates().then((data) => setTemplates(data.templates));
-  }, []);
-
-  useEffect(() => {
-    if (selectedTemplate) {
-      getLitigationFields(selectedTemplate).then((data) => setFields(data.fields));
-    } else {
-      setFields([]);
-    }
-    setFormData({});
-    setNotice("");
-    setIpc("");
-  }, [selectedTemplate]);
+  const [dynamicFields, setDynamicFields] = useState<Record<string, string>>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTemplate(e.target.value);
+  const handleDynamicFieldChange = (fieldName: string, value: string) => {
+    setDynamicFields(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
   };
 
-  // Only fetch IPC recommendations when user clicks Enter button
-  const handleSubjectRecommend = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim()) return;
-    setSubjectLoading(true);
-    const data = await getIpcRecommendations(subject);
-    setIpcRecommendations(data.recommendations || []);
-    setSubjectLoading(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const fd = new FormData();
-    fd.append("selected_type", selectedTemplate);
-    fields.forEach((field) => fd.append(field.name, formData[field.name] || ""));
-    fd.append("tone", formData.tone || "formal");
-    fd.append("case_description", formData.case_description || "");  // Add case description
-    fd.append("issue_date", formData.issue_date || new Date().toISOString().split('T')[0]);
-    fd.append("problem_date", formData.problem_date || "");
-    fd.append("notice_period", formData.notice_period || "7 days");
-    fd.append("total_amount", formData.total_amount || "");
-    fd.append("sender_name", formData.sender_name || "");
-    fd.append("sender_address", formData.sender_address || "");
-    fd.append("sender_title", formData.sender_title || "");
-    fd.append("sender_company", formData.sender_company || "");
-    fd.append("recipient_name", formData.recipient_name || "");
-    fd.append("recipient_address", formData.recipient_address || "");
-    fd.append("recipient_title", formData.recipient_title || "");
-    fd.append("recipient_company", formData.recipient_company || "");
-    fd.append("signature", formData.signature || "");
-    // Add file if needed: fd.append("file", fileInput.files[0])
-    const result = await generateNotice(fd);
-    setNotice(result.notice);
-    setIpc(result.ipc);
-    setLoading(false);
-  };
-
-  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSubject(e.target.value);
-    setIpcRecommendations([]); // Clear recommendations on subject change
+    onSubmit({
+      ...formData,
+      ...dynamicFields
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 bg-white rounded shadow">
-      <label className="block">
-        Select Template:
-        <select value={selectedTemplate} onChange={handleTemplateChange} className="ml-2 border rounded">
-          <option value="">-- Select --</option>
-          {templates.map((tpl) => (
-            <option key={tpl} value={tpl}>{tpl}</option>
-          ))}
-        </select>
-      </label>
-      {/* Subject field with Enter button */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <label className="block">Subject:</label>
-          <input
-            type="text"
-            name="subject"
-            value={subject}
-            onChange={handleSubjectChange}
-            className="border rounded w-full p-1"
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Notice Type
+          </label>
+          <select
+            name="selected_type"
+            value={formData.selected_type}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          >
+            <option value="">Select a notice type</option>
+            <option value="Eviction">Eviction</option>
+            <option value="Payment Recovery">Payment Recovery</option>
+            <option value="Employment Termination">Employment Termination</option>
+            <option value="Contract Breach">Contract Breach</option>
+            <option value="Loan Default">Loan Default</option>
+            <option value="Cheque Bounce">Cheque Bounce</option>
+            <option value="Consumer Complaint">Consumer Complaint</option>
+            <option value="Defamation">Defamation</option>
+            <option value="Lease Termination">Lease Termination</option>
+            <option value="Intellectual Property Infringement">IP Infringement</option>
+            <option value="Construction Delay">Construction Delay</option>
+            <option value="Property Damage">Property Damage</option>
+            <option value="Workplace Harassment">Workplace Harassment</option>
+            <option value="Environmental Violation">Environmental Violation</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Tone
+          </label>
+          <select
+            name="tone"
+            value={formData.tone}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="formal">Formal</option>
+            <option value="casual">Casual</option>
+            <option value="firm">Firm</option>
+            <option value="empathetic">Empathetic</option>
+          </select>
+        </div>
+
+        {/* Standard Fields */}
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Case Description
+          </label>
+          <textarea
+            name="case_description"
+            value={formData.case_description}
+            onChange={handleInputChange}
+            rows={4}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
           />
         </div>
-        <button
-          type="button"
-          onClick={handleSubjectRecommend}
-          className="bg-green-600 text-white px-3 py-2 rounded mt-6"
-          disabled={subjectLoading}
-        >
-          {subjectLoading ? "Loading..." : "Enter"}
-        </button>
-      </div>
-      {/* Show IPC recommendations */}
-      {ipcRecommendations.length > 0 && (
-        <div className="mb-2">
-          <h3 className="font-semibold">Recommended IPC Sections (from subject)</h3>
-          <div className="flex flex-wrap gap-2">
-            {ipcRecommendations.map((ipc, idx) => (
-              <span key={idx} className="bg-blue-100 text-blue-800 px-2 py-1 rounded cursor-pointer">
-                {ipc}
-              </span>
-            ))}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Issue Date
+          </label>
+          <input
+            type="date"
+            name="issue_date"
+            value={formData.issue_date}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Problem Date
+          </label>
+          <input
+            type="date"
+            name="problem_date"
+            value={formData.problem_date}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          />
+        </div>
+
+        {/* Sender Information */}
+        <div className="col-span-2">
+          <h3 className="text-lg font-medium text-gray-900">Sender Information</h3>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input
+              type="text"
+              name="sender_name"
+              placeholder="Sender Name"
+              value={formData.sender_name}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="sender_address"
+              placeholder="Sender Address"
+              value={formData.sender_address}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="sender_title"
+              placeholder="Sender Title (optional)"
+              value={formData.sender_title}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            <input
+              type="text"
+              name="sender_company"
+              placeholder="Sender Company (optional)"
+              value={formData.sender_company}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
           </div>
         </div>
-      )}
-      {/* Add case description field */}
-      <div>
-        <label className="block">Case Description:</label>
-        <textarea
-          name="case_description"
-          value={formData.case_description || ""}
-          onChange={handleInputChange}
-          className="border rounded w-full p-1 h-32"
-          placeholder="Enter the details of your case..."
-        />
-      </div>
-      {/* Dynamic fields based on template */}
-      {fields.map((field) => (
-        <div key={field.name}>
-          <label className="block">{field.label}:</label>
+
+        {/* Recipient Information */}
+        <div className="col-span-2">
+          <h3 className="text-lg font-medium text-gray-900">Recipient Information</h3>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input
+              type="text"
+              name="recipient_name"
+              placeholder="Recipient Name"
+              value={formData.recipient_name}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="recipient_address"
+              placeholder="Recipient Address"
+              value={formData.recipient_address}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="recipient_title"
+              placeholder="Recipient Title (optional)"
+              value={formData.recipient_title}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            <input
+              type="text"
+              name="recipient_company"
+              placeholder="Recipient Company (optional)"
+              value={formData.recipient_company}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Additional Fields */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Notice Period
+          </label>
           <input
             type="text"
-            name={field.name}
-            value={formData[field.name] || ""}
+            name="notice_period"
+            value={formData.notice_period}
             onChange={handleInputChange}
-            className="border rounded w-full p-1"
+            placeholder="e.g., 30 days"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
           />
         </div>
-      ))}
-      <label className="block">Tone:
-        <select name="tone" value={formData.tone || "formal"} onChange={handleInputChange} className="ml-2 border rounded">
-          <option value="formal">Formal</option>
-          <option value="casual">Casual</option>
-        </select>
-      </label>
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={loading}>
-        {loading ? "Generating..." : "Generate Notice"}
-      </button>
-      {notice && (
-        <div className="mt-4">
-          <h2 className="font-bold">Generated Notice</h2>
-          <textarea className="w-full h-40 border rounded" value={notice} readOnly />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Total Amount (if applicable)
+          </label>
+          <input
+            type="text"
+            name="total_amount"
+            value={formData.total_amount}
+            onChange={handleInputChange}
+            placeholder="e.g., ₹50,000"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Signature
+          </label>
+          <input
+            type="text"
+            name="signature"
+            value={formData.signature}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            required
+          />
+        </div>
+      </div>
+
+      {/* Dynamic Fields based on Notice Type */}
+      {formData.selected_type && (
+        <div className="mt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Details</h3>
+          <DynamicForm
+            litigationType={formData.selected_type}
+            onFieldChange={handleDynamicFieldChange}
+          />
         </div>
       )}
-      {ipc && (
-        <div className="mt-2">
-          <h3 className="font-semibold">Recommended IPC Sections</h3>
-          <div className="bg-gray-100 p-2 rounded">{ipc}</div>
-        </div>
-      )}
+
+      <div className="mt-6">
+        <button
+          type="submit"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Generate Notice
+        </button>
+      </div>
     </form>
   );
 };

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { DynamicForm } from '../components/DynamicForm';
 import { NoticePreview } from '../components/NoticePreview';
 import { NoticeEditor } from '../components/NoticeEditor';
+import { generateNotice } from '../api/notice';
 import { NoticeData } from '../types/notice';
-import { generateNotice } from '../api/notice'; // Make sure this import is present
 
 export const NoticePage: React.FC = () => {
   const [formData, setFormData] = useState<NoticeData>({
-    litigationType: '',
+    selected_type: '',
     tone: 'formal',
+<<<<<<< HEAD
     subject: '',
     issueDate: '',
     problemDate: '',
@@ -26,39 +27,43 @@ export const NoticePage: React.FC = () => {
     caseDescription: '',
     customFields: {},
     selectedTemplate: ''
+=======
+    case_description: '',
+    issue_date: '',
+    problem_date: '',
+    notice_period: '',
+    total_amount: '',
+    sender_name: '',
+    sender_address: '',
+    sender_title: '',
+    sender_company: '',
+    recipient_name: '',
+    recipient_address: '',
+    recipient_title: '',
+    recipient_company: '',
+    signature: '',
+>>>>>>> 144cbd2748a49538cdc10526ac4f76f1cbcaa92e
   });
-
 
   const [generatedNotice, setGeneratedNotice] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotice, setEditedNotice] = useState<string>('');
 
   const handleFormSubmit = async (data: NoticeData) => {
-    setFormData(data);
+    try {
+      const result = await generateNotice(data);
+      setGeneratedNotice(result.notice);
+      setEditedNotice(result.notice);
+    } catch (error) {
+      console.error('Error generating notice:', error);
+    }
+  };
 
-    // Prepare FormData for the backend
-    const fd = new FormData();
-    fd.append("selected_type", data.litigationType || data.selectedTemplate || "");
-    fd.append("issue_date", data.issueDate || "");
-    fd.append("problem_date", data.problemDate || "");
-    fd.append("case_description", data.caseDescription || "");
-    fd.append("notice_period", data.noticePeriod || "");
-    fd.append("total_amount", data.totalAmount || "");
-    fd.append("sender_name", data.senderName || "");
-    fd.append("sender_address", data.senderAddress || "");
-    fd.append("sender_title", data.senderTitle || "");
-    fd.append("sender_company", data.senderCompany || "");
-    fd.append("recipient_name", data.recipientName || "");
-    fd.append("recipient_address", data.recipientAddress || "");
-    fd.append("recipient_title", data.recipientTitle || "");
-    fd.append("recipient_company", data.recipientCompany || "");
-    fd.append("signature", data.signature || "");
-    fd.append("tone", data.tone || "formal");
-
-    // Call backend API
-    const result = await generateNotice(fd);
-    setGeneratedNotice(result.notice);
-    setEditedNotice(result.notice);
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
   };
 
   return (
@@ -70,6 +75,7 @@ export const NoticePage: React.FC = () => {
         <div className="w-24 h-1 bg-blue-200 rounded-full" />
       </header>
 
+<<<<<<< HEAD
       {/* Main Content */}
       <main className="w-full px-0">
         <div className="grid grid-cols-1 w-full">
@@ -77,6 +83,14 @@ export const NoticePage: React.FC = () => {
           <section className="bg-white rounded-2xl shadow-lg p-8 flex flex-col justify-center w-[70%]  mx-auto">
             <DynamicForm onSubmit={handleFormSubmit} />
           </section>
+=======
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <DynamicForm
+            litigationType={formData.selected_type}
+            onFieldChange={handleFieldChange}
+          />
+>>>>>>> 144cbd2748a49538cdc10526ac4f76f1cbcaa92e
         </div>
       </main>
     </div>

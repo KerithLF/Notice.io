@@ -1,7 +1,7 @@
 import React from 'react';
 import { Edit, Download, Share2, Mail, MessageSquare, Sparkles } from 'lucide-react';
-import { NoticeData } from '../types/notice';
 import jsPDF from 'jspdf';
+import { NoticeData } from '../types/notice';
 
 interface NoticePreviewProps {
   notice: string;
@@ -16,11 +16,11 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({ notice, onEdit, fo
     const doc = new jsPDF();
     const lines = doc.splitTextToSize(notice, 180);
     doc.text(lines, 20, 20);
-    doc.save(`legal-notice-${formData.subject}.pdf`);
+    doc.save(`legal-notice-${formData.selected_type}.pdf`);
   };
 
   const shareViaEmail = () => {
-    const subject = encodeURIComponent(`Legal Notice: ${formData.subject}`);
+    const subject = encodeURIComponent(`Legal Notice: ${formData.selected_type}`);
     const body = encodeURIComponent(notice);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
