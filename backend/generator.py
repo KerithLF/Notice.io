@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 from backend.templates import TEMPLATES, PLACEHOLDER_ALIASES
 from backend.utils import normalize_fuzzy_placeholders
+from backend.ipc_indexer import get_ipc_sections
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("API_KEY")
@@ -53,7 +54,51 @@ Choose from:
 
 def summarize_incident(description: str, tone="formal") -> str:
     prompt = f"""
-You are a legal assistant. Summarize the following incident in a {tone} legal tone:
+
+You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
+
+Using the rules below, generate a complete, professionally worded legal notice in plain English, unless otherwise specified:
+
+RULES AND STRUCTURE TO FOLLOW:
+
+1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of {{Lawyer’s Name}}]").
+2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
+3. On the top-right corner, mention the date of issuing the notice.
+4. After that, clearly mention the recipient details:
+   - Name of recipient
+   - Father’s/Husband’s name
+   - Full address with pin code
+   - Contact details if available (phone/email)
+   - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
+5. Include a subject line: "Subject: Legal Notice"
+6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
+   - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
+7. Introduce the sender and recipient and their relationship/acquaintance.
+8. Describe clearly and chronologically the events that led to the dispute.
+9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
+10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
+11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
+12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
+13. Mention that a copy of the legal notice is retained for records and possible future legal action.
+14. End with the closing salutation and the sender’s signature.
+
+TONE AND STYLE:
+- Generate a legal notice following the above rules for the given incident in a {tone} legal tone.
+- Avoid ambiguity.
+- Follow proper legal formatting conventions.
+
+INPUT DATA:
+- Sender details: {{sender_details}}
+- Recipient details: {{recipient_details}} or Company details: {{recipient_company_details}}
+- Event description: {{event_description}}
+- Applicable laws/acts: {{applicable_laws}}
+- Time limit for response: {{time_limit}}
+
+OUTPUT:
+A fully drafted legal notice following the above rules, ready to be printed and sent.
+
+Now, using the above information and structure, draft the perfect legal notice.
+
 
 \"\"\"{description}\"\"\"
 """
@@ -62,17 +107,32 @@ You are a legal assistant. Summarize the following incident in a {tone} legal to
 
 
 def recommend_ipc_llm(description: str) -> list:
+    ipc_context = "\n\n".join(get_ipc_sections(description))
     prompt = f"""
-You are a legal expert assistant. Based on the following case description, recommend the most relevant IPC (Indian Penal Code) sections (Top 5 sections) with their section number, title, and a brief description why they apply:
+You are a legal expert assistant. Based on the following case description and subject, recommend the most relevant IPC (Indian Penal Code) sections with their section number, title, and a brief description why they apply from the {ipc_context} with respected keywords, so that the user can easily find the relevant section:
 
 Case Description:
 ""{description}""
 
 Respond in this format:
 - Section 420: Cheating
-               Explanaation
+         Explanation:
+         keywords:
+         - cheating
+         - fraud
+         - dishonesty
+         - deceit
+         - misrepresentation
+         - breach of trust
 - Section 448: House Trespass
-               Explanation
+         Explanation:
+         keywords:
+         - trespass
+         - house
+         - breach
+         - violation
+         - trespass
+         - house
 - ...
 """
 
@@ -137,7 +197,9 @@ def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = Fa
     print(f"Creating notice with description: {data['incident_description']}")
     
     prompt = f"""
-You are a legal assistant. Based on the following information, generate a complete legal notice in a {tone} tone:
+You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
+
+Using the rules below, generate a complete legal notice in a {tone} tone, professionally worded legal notice in plain English, unless otherwise specified:
 
 - **Litigation Type**: {selected_type or data.get('notice_type')}
 - **Issue Date**: {data.get('issue_date')}
@@ -163,13 +225,46 @@ You are a legal assistant. Based on the following information, generate a comple
 Sign the notice as:
 {data.get('signature')}
 
-The notice should include the headings (first letter capital and other letters lowercase):
-- A subject
-- Formal opening
-- Mention of legal grounds or dispute
-- Instructions or demands
-- Consequences of not responding
-- Signature line
+RULES AND STRUCTURE TO FOLLOW:
+
+1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
+2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
+3. On the top-right corner, mention the date of issuing the notice.
+4. After that, clearly mention the recipient details:
+   - Name of recipient
+   - Father’s/Husband’s name
+   - Full address with pin code
+   - Contact details if available (phone/email)
+   - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
+5. Include a subject line: "Subject: Legal Notice"
+6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
+   - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
+7. Introduce the sender and recipient and their relationship/acquaintance.
+8. Describe clearly and chronologically the events that led to the dispute.
+9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
+10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
+11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
+12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
+13. Mention that a copy of the legal notice is retained for records and possible future legal action.
+14. End with the closing salutation and the sender’s signature.
+
+TONE AND STYLE:
+- Be formal, precise, and professional.
+- Avoid ambiguity.
+- Follow proper legal formatting conventions.
+
+INPUT DATA:
+- Sender details: {{sender_details}}
+- Recipient details: {{recipient_details}}
+- Event description: {{event_description}}
+- Applicable laws/acts: {{applicable_laws}}
+- Time limit for response: {{time_limit}}
+
+OUTPUT:
+A fully drafted legal notice following the above rules, ready to be printed and sent.
+
+Now, using the above information and structure, draft the perfect legal notice.
+
 
 Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.:
 

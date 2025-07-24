@@ -243,6 +243,131 @@ Sincerely,
 {title}
 {company}
 {sender_address}
+""",
+
+    "Intellectual Property Infringement": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Notice for Intellectual Property Infringement
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, regarding intellectual property infringement identified on {problem_date}.
+
+{summarized_body}
+
+You are hereby directed to cease and desist all infringing activities within {notice_period}, failing which legal proceedings will be initiated.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Construction Delay": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Notice for Construction Delay
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, concerning construction delays that began on {problem_date}.
+
+{summarized_body}
+
+You are hereby required to address these delays and complete the project within {notice_period}, failing which legal action will be pursued.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Property Damage": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Notice for Property Damage
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, regarding property damage that occurred on {problem_date}.
+
+{summarized_body}
+
+You are hereby required to compensate for the damages within {notice_period}, failing which appropriate legal action will be initiated.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Workplace Harassment": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Notice for Workplace Harassment
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, concerning workplace harassment incidents that occurred on {problem_date}.
+
+{summarized_body}
+
+You are hereby required to respond to these allegations and take corrective action within {notice_period}, failing which legal proceedings will be initiated.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
+""",
+
+    "Environmental Violation": """
+Date: {issue_date}
+
+To,
+{recipient_name}
+{recipient_address}
+
+Subject: Notice for Environmental Violation
+
+Dear {recipient_name},
+
+This legal notice is issued by {sender_name}, located at {sender_address}, regarding environmental violations observed on {problem_date}.
+
+{summarized_body}
+
+You are hereby directed to rectify these violations within {notice_period}, failing which legal action will be pursued under applicable environmental laws.
+
+Sincerely,
+
+{signature}
+{title}
+{company}
+{sender_address}
 """
 }
 
@@ -295,5 +420,60 @@ LITIGATION_FIELDS = {
         {"name": "loan_account_number", "label": "Loan Account Number"},
         {"name": "outstanding_amount", "label": "Outstanding Amount"},
         {"name": "default_date", "label": "Default Date"},
+    ],
+    "Cheque Bounce": [
+        {"name": "drawer_name", "label": "Drawer Name"},
+        {"name": "cheque_number", "label": "Cheque Number"},
+        {"name": "cheque_date", "label": "Cheque Date"},
+        {"name": "bank_name", "label": "Bank Name"},
+        {"name": "amount", "label": "Cheque Amount"},
+    ],
+    "Consumer Complaint": [
+        {"name": "consumer_name", "label": "Consumer Name"},
+        {"name": "product_or_service", "label": "Product/Service"},
+        {"name": "purchase_date", "label": "Purchase Date"},
+        {"name": "complaint_details", "label": "Complaint Details"},
+    ],
+    "Defamation": [
+        {"name": "accused_name", "label": "Accused Person/Entity"},
+        {"name": "incident_date", "label": "Incident Date"},
+        {"name": "defamatory_statement", "label": "Defamatory Statement"},
+        {"name": "damages_claimed", "label": "Damages Claimed"},
+    ],
+    "Lease Termination": [
+        {"name": "landlord_name", "label": "Landlord Name"},
+        {"name": "tenant_name", "label": "Tenant Name"},
+        {"name": "lease_start_date", "label": "Lease Start Date"},
+        {"name": "termination_reason", "label": "Reason for Termination"},
+    ],
+    "Intellectual Property Infringement": [
+        {"name": "ip_type", "label": "Type of IP (Patent/Trademark/Copyright)"},
+        {"name": "registration_number", "label": "IP Registration Number"},
+        {"name": "infringement_details", "label": "Details of Infringement"},
+        {"name": "estimated_damages", "label": "Estimated Damages"},
+    ],
+    "Construction Delay": [
+        {"name": "project_name", "label": "Project Name"},
+        {"name": "original_deadline", "label": "Original Completion Deadline"},
+        {"name": "current_status", "label": "Current Project Status"},
+        {"name": "delay_impact", "label": "Impact of Delay"},
+    ],
+    "Property Damage": [
+        {"name": "property_type", "label": "Type of Property"},
+        {"name": "damage_description", "label": "Description of Damage"},
+        {"name": "damage_date", "label": "Date of Damage"},
+        {"name": "repair_estimate", "label": "Estimated Repair Cost"},
+    ],
+    "Workplace Harassment": [
+        {"name": "complainant_name", "label": "Complainant Name"},
+        {"name": "incident_details", "label": "Incident Details"},
+        {"name": "witnesses", "label": "Witness Names (if any)"},
+        {"name": "previous_complaints", "label": "Previous Complaints Filed"},
+    ],
+    "Environmental Violation": [
+        {"name": "violation_type", "label": "Type of Environmental Violation"},
+        {"name": "affected_area", "label": "Affected Area/Location"},
+        {"name": "impact_assessment", "label": "Environmental Impact Assessment"},
+        {"name": "regulatory_body", "label": "Relevant Regulatory Body"},
     ]
 }
