@@ -9,6 +9,25 @@ export const NoticePage: React.FC = () => {
   const [formData, setFormData] = useState<NoticeData>({
     selected_type: '',
     tone: 'formal',
+<<<<<<< HEAD
+    subject: '',
+    issueDate: '',
+    problemDate: '',
+    noticePeriod: '',
+    totalAmount: '',
+    senderName: '',
+    senderAddress: '',
+    senderTitle: '',
+    senderCompany: '',
+    recipientName: '',
+    recipientAddress: '',
+    recipientTitle: '',
+    recipientCompany: '',
+    signature: '',
+    caseDescription: '',
+    customFields: {},
+    selectedTemplate: ''
+=======
     case_description: '',
     issue_date: '',
     problem_date: '',
@@ -23,6 +42,7 @@ export const NoticePage: React.FC = () => {
     recipient_title: '',
     recipient_company: '',
     signature: '',
+>>>>>>> 144cbd2748a49538cdc10526ac4f76f1cbcaa92e
   });
 
   const [generatedNotice, setGeneratedNotice] = useState<string>('');
@@ -47,42 +67,32 @@ export const NoticePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Generate Legal Notice</h1>
-        <p className="text-gray-600">Fill in the details to generate a professional legal notice</p>
-      </div>
+    <div className="min-h-screen bg-gray-50 w-full">
+      {/* Header */}
+      <header className="w-full flex flex-col items-center py-12 mb-8 bg-transparent">
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-2 text-center">Generate Legal Notice</h1>
+        <p className="text-lg text-gray-600 text-center mb-4">Fill in the details to generate a professional legal notice</p>
+        <div className="w-24 h-1 bg-blue-200 rounded-full" />
+      </header>
 
+<<<<<<< HEAD
+      {/* Main Content */}
+      <main className="w-full px-0">
+        <div className="grid grid-cols-1 w-full">
+          {/* Form Section (increased width) */}
+          <section className="bg-white rounded-2xl shadow-lg p-8 flex flex-col justify-center w-[70%]  mx-auto">
+            <DynamicForm onSubmit={handleFormSubmit} />
+          </section>
+=======
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           <DynamicForm
             litigationType={formData.selected_type}
             onFieldChange={handleFieldChange}
           />
+>>>>>>> 144cbd2748a49538cdc10526ac4f76f1cbcaa92e
         </div>
-
-        <div className="space-y-6">
-          {generatedNotice && !isEditing && (
-            <NoticePreview
-              notice={generatedNotice}
-              onEdit={() => setIsEditing(true)}
-              formData={formData}
-            />
-          )}
-
-          {isEditing && (
-            <NoticeEditor
-              notice={editedNotice}
-              onChange={setEditedNotice}
-              onSave={() => {
-                setGeneratedNotice(editedNotice);
-                setIsEditing(false);
-              }}
-              onCancel={() => setIsEditing(false)}
-            />
-          )}
-        </div>
-      </div>
+      </main>
     </div>
   );
 };

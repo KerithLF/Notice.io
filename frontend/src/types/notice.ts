@@ -1,5 +1,5 @@
 export interface NoticeData {
-  selected_type: string;
+  litigationType: string;
   tone: string;
   case_description: string;
   issue_date: string;
@@ -15,7 +15,11 @@ export interface NoticeData {
   recipient_title: string;
   recipient_company: string;
   signature: string;
-  [key: string]: string; // For dynamic fields
+  caseDescription: string;
+  customFields?: { [key: string]: any };
+  selectedTemplate?: string;
+  issueMonth?: string;
+  issueYear?: string;
 }
 
 export interface Field {
