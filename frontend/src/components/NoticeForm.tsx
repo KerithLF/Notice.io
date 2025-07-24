@@ -1,31 +1,38 @@
 import React, { useState } from 'react';
-import DynamicForm from './DynamicForm';
+import { DynamicForm } from './DynamicForm';
+import { NoticeData } from '../types/notice';
 
 interface NoticeFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: NoticeData) => void;
 }
 
 const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
-  const [formData, setFormData] = useState({
-    selected_type: '',
-    issue_date: '',
-    problem_date: '',
+  const [formData, setFormData] = useState<NoticeData>({
+    litigation_type: '',
+    tone: 'formal',
     case_description: '',
+    issue_date: '',
+    issue_month: '',
+    issue_year: '',
+    problem_date: '',
     notice_period: '',
     total_amount: '',
     sender_name: '',
     sender_address: '',
     sender_title: '',
     sender_company: '',
+    sender_mail: '',
+    sender_phone: '',
     recipient_name: '',
     recipient_address: '',
     recipient_title: '',
     recipient_company: '',
+    recipient_mail: '',
+    recipient_phone: '',
     signature: '',
-    tone: 'formal',
+    custom_fields: {},
+    selected_template: ''
   });
-
-  const [dynamicFields, setDynamicFields] = useState<Record<string, string>>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -36,18 +43,18 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
   };
 
   const handleDynamicFieldChange = (fieldName: string, value: string) => {
-    setDynamicFields(prev => ({
+    setFormData(prev => ({
       ...prev,
-      [fieldName]: value
+      custom_fields: {
+        ...prev.custom_fields,
+        [fieldName]: value
+      }
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      ...dynamicFields
-    });
+    onSubmit(formData);
   };
 
   return (
@@ -58,27 +65,27 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
             Notice Type
           </label>
           <select
-            name="selected_type"
-            value={formData.selected_type}
+            name="litigation_type"
+            value={formData.litigation_type}
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           >
             <option value="">Select a notice type</option>
-            <option value="Eviction">Eviction</option>
-            <option value="Payment Recovery">Payment Recovery</option>
-            <option value="Employment Termination">Employment Termination</option>
-            <option value="Contract Breach">Contract Breach</option>
-            <option value="Loan Default">Loan Default</option>
-            <option value="Cheque Bounce">Cheque Bounce</option>
-            <option value="Consumer Complaint">Consumer Complaint</option>
-            <option value="Defamation">Defamation</option>
-            <option value="Lease Termination">Lease Termination</option>
-            <option value="Intellectual Property Infringement">IP Infringement</option>
-            <option value="Construction Delay">Construction Delay</option>
-            <option value="Property Damage">Property Damage</option>
-            <option value="Workplace Harassment">Workplace Harassment</option>
-            <option value="Environmental Violation">Environmental Violation</option>
+            <option value="eviction">Eviction</option>
+            <option value="payment">Payment Recovery</option>
+            <option value="employment">Employment Termination</option>
+            <option value="contract">Contract Breach</option>
+            <option value="loan">Loan Default</option>
+            <option value="cheque">Cheque Bounce</option>
+            <option value="consumer">Consumer Complaint</option>
+            <option value="defamation">Defamation</option>
+            <option value="lease">Lease Termination</option>
+            <option value="ip">IP Infringement</option>
+            <option value="construction">Construction Delay</option>
+            <option value="property">Property Damage</option>
+            <option value="harassment">Workplace Harassment</option>
+            <option value="environmental">Environmental Violation</option>
           </select>
         </div>
 
@@ -180,6 +187,24 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
+            <input
+              type="email"
+              name="sender_mail"
+              placeholder="Sender Email"
+              value={formData.sender_mail}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="tel"
+              name="sender_phone"
+              placeholder="Sender Phone"
+              value={formData.sender_phone}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
           </div>
         </div>
 
@@ -220,6 +245,24 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
               value={formData.recipient_company}
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            <input
+              type="email"
+              name="recipient_mail"
+              placeholder="Recipient Email"
+              value={formData.recipient_mail}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="tel"
+              name="recipient_phone"
+              placeholder="Recipient Phone"
+              value={formData.recipient_phone}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
             />
           </div>
         </div>
@@ -270,11 +313,11 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
       </div>
 
       {/* Dynamic Fields based on Notice Type */}
-      {formData.selected_type && (
+      {formData.litigation_type && (
         <div className="mt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Details</h3>
           <DynamicForm
-            litigationType={formData.selected_type}
+            litigation_type={formData.litigation_type}
             onFieldChange={handleDynamicFieldChange}
           />
         </div>
