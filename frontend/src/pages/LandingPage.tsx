@@ -17,14 +17,14 @@ export const LandingPage: React.FC = () => {
         <div className="flex justify-center gap-4">
           <Link
             to="/generate"
-            className="px-6 py-3 bg-[#D6A767] text-white rounded-lg hover:bg-[#c49655] transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 px-6 py-3 bg-[#D6A767] text-white rounded-lg hover:bg-[#c49655] transition-colors"
           >
             <span className="text-xl">⚡</span>
             Generate Notice
           </Link>
           <Link
             to="/create"
-            className="px-6 py-3 border-2 border-[#D6A767] text-[#D6A767] rounded-lg hover:bg-[#D6A767] hover:text-white transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 px-6 py-3 border-2 border-[#D6A767] text-[#D6A767] rounded-lg hover:bg-[#D6A767] hover:text-white transition-colors"
           >
             <span className="text-xl">✏️</span>
             Create from Scratch

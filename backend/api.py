@@ -1,83 +1,132 @@
-from fastapi import FastAPI, UploadFile, Form, Query
-from fastapi.middleware.cors import CORSMiddleware
-from backend.generator import create_notice, save_to_pdf, recommend_ipc_llm
-from backend.parsing import extract_text_from_any
-from backend.templates import TEMPLATES, LITIGATION_FIELDS
-import tempfile
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+from .generator import generate_legal_notice
+from .ipc_indexer import get_ipc_recommendations
 
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # For dev only. Restrict in production!
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+router = APIRouter()
 
-@app.post("/generate-notice/")
-async def generate_notice(
-    selected_type: str = Form(...),
-    issue_date: str = Form(...),
-    problem_date: str = Form(...),
-    case_description: str = Form(...),  # Make sure this is required
-    notice_period: str = Form(...),
-    total_amount: str = Form(""),
-    sender_name: str = Form(...),
-    sender_address: str = Form(...),
-    sender_title: str = Form(""),
-    sender_company: str = Form(""),
-    recipient_name: str = Form(...),
-    recipient_address: str = Form(...),
-    recipient_title: str = Form(""),
-    recipient_company: str = Form(""),
-    signature: str = Form(...),
-    tone: str = Form(...),
-    file: UploadFile = None
-):
-    if file:
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(await file.read())
-            case_description = extract_text_from_any(tmp.name)
-    
-    # Print for debugging
-    print(f"Case Description: {case_description}")
-    
-    data = {
-        "notice_type": selected_type,
-        "issue_date": issue_date,
-        "problem_date": problem_date,
-        "incident_description": case_description,  # Make sure this is set correctly
-        "notice_period": notice_period,
-        "sender_name": sender_name,
-        "sender_address": sender_address,
-        "title": sender_title,
-        "company": sender_company or "",
-        "signature": signature,
-        "total_amount": total_amount or "",
-        "recipient_name": recipient_name,
-        "recipient_address": recipient_address,
-        "recipient_title": recipient_title or "",
-        "recipient_company": recipient_company or "",
-    }
-    
-    # Print for debugging
-    print(f"Data being sent to create_notice: {data}")
-    
-    ipc, notice = create_notice(data, tone=tone, selected_type=selected_type, return_ipc=True)
-    return {"ipc": ipc, "notice": notice}
+class Incident(BaseModel):
+    date: str
+    description: str
 
-@app.get("/templates/")
-def get_templates():
-    return {"templates": list(TEMPLATES.keys())}
+class NoticeRequest(BaseModel):
+    litigation_type: str
+    tone: str
+    subject: str
+    issue_date: str
+    sender_name: str
+    sender_address: str
+    sender_mail: str
+    sender_phone: str
+    recipient_name: str
+    recipient_address: str
+    recipient_mail: str
+    recipient_phone: str
+    council_name: str
+    council_address: str
+    council_mail: str
+    council_phone: str
+    incidents: List[Incident]
+    conclusion: str
 
-@app.get("/litigation-fields/{template_name}")
-def get_fields(template_name: str):
-    return {"fields": LITIGATION_FIELDS.get(template_name, [])}
+class IPCRecommendation(BaseModel):
+    section: str
+    title: str
+    description: str
 
-@app.get("/ipc-recommendations")
-def ipc_recommendations(subject: str = Query(...)):
-    # Use your LLM-based function for recommendations
-    ipc_sections = recommend_ipc_llm(subject)
-    # Clean up and return as a list
-    cleaned = [sec.strip("- ").strip() for sec in ipc_sections if sec.strip()]
-    return {"recommendations": cleaned}
+class NoticeResponse(BaseModel):
+    notice_text: str
+    ipc_recommendations: List[IPCRecommendation]
+
+@router.post("/generate-notice", response_model=NoticeResponse)
+async def generate_notice(request: NoticeRequest):
+    try:
+        print("Received request for notice generation")
+        # Generate the notice text using the LLM
+        notice_text = generate_legal_notice(
+            litigation_type=request.litigation_type,
+            tone=request.tone,
+            subject=request.subject,
+            issue_date=request.issue_date,
+            sender_details={
+                "name": request.sender_name,
+                "address": request.sender_address,
+                "email": request.sender_mail,
+                "phone": request.sender_phone
+            },
+            recipient_details={
+                "name": request.recipient_name,
+                "address": request.recipient_address,
+                "email": request.recipient_mail,
+                "phone": request.recipient_phone
+            },
+            council_details={
+                "name": request.council_name,
+                "address": request.council_address,
+                "email": request.council_mail,
+                "phone": request.council_phone
+            },
+            incidents=[{
+                "date": incident.date,
+                "description": incident.description
+            } for incident in request.incidents],
+            conclusion=request.conclusion
+        )
+        print("Notice generated successfully")
+
+        # Get IPC recommendations based on subject and incidents
+        incident_texts = [incident.description for incident in request.incidents]
+        print("Getting IPC recommendations")
+        ipc_recommendations = get_ipc_recommendations(
+            subject=request.subject,
+            incidents=incident_texts
+        )
+        print("IPC recommendations generated successfully")
+
+        return NoticeResponse(
+            notice_text=notice_text,
+            ipc_recommendations=ipc_recommendations
+        )
+
+    except Exception as e:
+        print(f"Error in generate_notice endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/litigation-fields/{litigation_type}")
+async def get_litigation_fields(litigation_type: str):
+    try:
+        print(f"Getting fields for litigation type: {litigation_type}")
+        # Define dynamic fields based on litigation type
+        fields = {
+            "Employment Law": [
+                {"name": "employee_name", "label": "Employee Name"},
+                {"name": "employer_name", "label": "Employer Name"},
+                {"name": "employment_start", "label": "Employment Start Date"},
+                {"name": "employment_end", "label": "Employment End Date"}
+            ],
+            "Civil": [
+                {"name": "plaintiff_name", "label": "Plaintiff Name"},
+                {"name": "defendant_name", "label": "Defendant Name"},
+                {"name": "claim_amount", "label": "Claim Amount"}
+            ],
+            "Criminal": [
+                {"name": "complainant_name", "label": "Complainant Name"},
+                {"name": "accused_name", "label": "Accused Name"},
+                {"name": "police_station", "label": "Police Station"},
+                {"name": "fir_number", "label": "FIR Number"}
+            ],
+            "Property": [
+                {"name": "property_address", "label": "Property Address"},
+                {"name": "property_type", "label": "Property Type"},
+                {"name": "dispute_type", "label": "Dispute Type"}
+            ]
+        }
+        
+        result = fields.get(litigation_type, [])
+        print(f"Returning fields: {result}")
+        return result
+    except Exception as e:
+        print(f"Error in get_litigation_fields endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

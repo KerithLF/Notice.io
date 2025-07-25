@@ -1,131 +1,183 @@
 import React, { useState } from 'react';
+import { NoticeBuilder } from '../components/NoticeBuilder';
+import { IPCSections } from '../components/IPCSections';
+import { AIRecommendations } from '../components/AIRecommendations';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { getIpcRecommendations } from '../api/notice'; // Add this import
 
 export const CreateNoticePage: React.FC = () => {
-  const [sender, setSender] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [caseNo, setCaseNo] = useState('');
-  const [subject, setSubject] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [noticeContent, setNoticeContent] = useState<string>('');
+  const [subject, setSubject] = useState<string>('');
+  const [caseDetails, setCaseDetails] = useState({
+    sender: 'John Doe',
+    recipient: 'Jane Smith',
+    caseNo: '2023-001'
+  });
+  const [ipcRecommendations, setIpcRecommendations] = useState<string[]>([]);
+  const [ipcLoading, setIpcLoading] = useState(false);
+  
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    // If dragging from IPCSections to NoticeBuilder, append the IPC section content
+    if (source.droppableId === 'ipc-sections' && destination.droppableId === 'notice-builder') {
+      // Find the IPC section by id
+      const draggedId = result.draggableId;
+      const draggedSection = parsedIpcSections.find(sec => sec.id === draggedId);
+      if (draggedSection) {
+        // Format: Section Title\nDescription\n\n
+        const formatted = `${draggedSection.title} Explanation:\n${draggedSection.description}\n\n`;
+        setNoticeContent(prev => prev ? prev + '\n' + formatted : formatted);
+      }
+    }
+  };
+
+  const handleIpcRecommend = async () => {
+    if (!subject.trim()) return;
+    setIpcLoading(true);
+    const data = await getIpcRecommendations(subject);
+    setIpcRecommendations(data.recommendations || []);
+    setIpcLoading(false);
+  };
+
+  // Improved parser for model output
+  function parseIpcRecommendationsFromText(text: string): { id: string; title: string; description: string }[] {
+    // Split on each new section (handles markdown bold and regular)
+    // This regex matches: - **Section ...** Explanation: ...
+    const sectionBlocks = text.split(/\n\s*-/).map((block, idx) => (idx === 0 ? block : '-'+block)).filter(b => b.trim().startsWith('-'));
+    const results = [];
+    for (let i = 0; i < sectionBlocks.length; i++) {
+      let block = sectionBlocks[i].trim();
+      // Remove leading dash and spaces
+      block = block.replace(/^[-\s]+/, '');
+      // Remove markdown bold
+      block = block.replace(/\*\*/g, '');
+      // Find the first colon after 'Section ...'
+      const sectionMatch = block.match(/^(Section [^:]+):?\s*(.*)$/);
+      if (sectionMatch) {
+        let title = sectionMatch[1].trim();
+        let rest = sectionMatch[2].trim();
+        // Remove 'Explanation:' if present
+        rest = rest.replace(/^Explanation:?\s*/i, '');
+        results.push({ id: `ipc-reco-${i}`, title, description: rest });
+      } else {
+        // Fallback: use the whole block as title
+        results.push({ id: `ipc-reco-${i}`, title: block, description: '' });
+      }
+    }
+    return results.slice(0, 5);
+  }
+
+  // Store parsed recommendations for IPCSections
+  const parsedIpcSections = ipcRecommendations.length === 1 && typeof ipcRecommendations[0] === 'string'
+    ? parseIpcRecommendationsFromText(ipcRecommendations[0])
+    : parseIpcRecommendationsFromText(ipcRecommendations.join('\n'));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Create Legal Notice</h1>
-          <p className="text-gray-600">Build your legal notice using IPC sections and custom content</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Notice.io</h1>
+            <p className="text-gray-600">Build your legal notice using IPC sections and custom content</p>
+          </div>
+          {/* Removed 'Saving...' indicator */}
         </div>
+      </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-4">
+      {/* Case Details Header */}
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sender</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sender</label>
             <input
               type="text"
-              value={sender}
-              onChange={(e) => setSender(e.target.value)}
-              placeholder="John Doe"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767]"
+              value={caseDetails.sender}
+              onChange={(e) => setCaseDetails(prev => ({ ...prev, sender: e.target.value }))}
+              className="input-style focus-gold"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Recipient</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
             <input
               type="text"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              placeholder="Jane Smith"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767]"
+              value={caseDetails.recipient}
+              onChange={(e) => setCaseDetails(prev => ({ ...prev, recipient: e.target.value }))}
+              className="input-style focus-gold"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Case No.</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Case No</label>
             <input
               type="text"
-              value={caseNo}
-              onChange={(e) => setCaseNo(e.target.value)}
-              placeholder="2023-001"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767]"
+              value={caseDetails.caseNo}
+              onChange={(e) => setCaseDetails(prev => ({ ...prev, caseNo: e.target.value }))}
+              className="input-style focus-gold"
             />
           </div>
         </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-          <div className="flex gap-2">
+        <div className="w-full flex flex-col md:flex-row items-start md:items-end gap-2">
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              className="input-style focus-gold w-full text-base px-4 py-3"
               placeholder="Enter notice subject"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767]"
             />
-            <button className="px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655]">
-              Get IPC
-            </button>
           </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Using:</label>
-          <select
-            value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767]"
+          <button
+            type="button"
+            onClick={handleIpcRecommend}
+            className="px-6 py-3 rounded font-semibold shadow-sm transition-colors duration-150 mt-6 md:mt-0"
+            style={{ background: '#D6A767', color: '#fff', border: 'none', minWidth: '140px' }}
+            disabled={ipcLoading}
           >
-            <option value="">Select Template</option>
-            <option value="general">General Template</option>
-            <option value="employment">Employment Template</option>
-            <option value="property">Property Template</option>
-          </select>
-        </div>
-
-        <div className="bg-white border rounded-lg p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium">IPC Sections</h2>
-            <div className="flex items-center">
-              <span className="text-sm text-gray-500 mr-2">Sender: {sender}</span>
-              <span className="text-sm text-gray-500 mr-2">Recipient: {recipient}</span>
-              <span className="text-sm text-gray-500">Case No: {caseNo}</span>
-            </div>
-          </div>
-
-          <div className="border-b pb-4 mb-4">
-            <div className="flex gap-2 mb-4">
-              <button className="p-2 border rounded hover:bg-gray-50">
-                <strong>B</strong>
-              </button>
-              <button className="p-2 border rounded hover:bg-gray-50">
-                <em>I</em>
-              </button>
-              <button className="p-2 border rounded hover:bg-gray-50">
-                <u>U</u>
-              </button>
-              <select className="px-2 border rounded">
-                <option>14px</option>
-                <option>16px</option>
-                <option>18px</option>
-              </select>
-              <button className="p-2 border rounded hover:bg-gray-50">≡</button>
-              <button className="p-2 border rounded hover:bg-gray-50">=</button>
-              <button className="p-2 border rounded hover:bg-gray-50">≡</button>
-              <button className="p-2 border rounded hover:bg-gray-50">≣</button>
-              <button className="p-2 border rounded hover:bg-gray-50">☰</button>
-            </div>
-            <div className="min-h-[400px] p-4 border rounded-lg">
-              <p className="text-gray-400">Start drafting your legal notice or apply AI suggestions.</p>
-            </div>
-          </div>
-
-          <div className="flex justify-between">
-            <button className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50">
-              <span>Upload</span>
-              <span className="text-blue-500">+</span>
-            </button>
-            <button className="px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655]">
-              Download
-            </button>
-          </div>
+            {ipcLoading ? "Loading..." : "Get IPC"}
+          </button>
         </div>
       </div>
+
+      {/* Template Selection */}
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+        <div className="flex items-center space-x-2 mb-4">
+          <span className="text-sm font-medium text-gray-700">Using:</span>
+          <select className="input-style focus-gold text-sm">
+            <option value="">Select Template</option>
+            <option value="eviction">Eviction</option>
+            <option value="payment-recovery">Payment Recovery</option>
+            <option value="breach-of-contract">Breach of Contract</option>
+            <option value="employment-termination">Employment Termination</option>
+            <option value="loan-default">Loan Default</option>
+            <option value="cheque-bounce">Dishonor Of Cheque</option>
+            <option value="consumer-complaint">Consumer Complaint</option>
+            <option value="ip-infringement">Intellectual Property Infringement</option>
+            <option value="defamation-harassment">Defamation / Harassment Notice</option>
+          </select>
+        </div>
+      </div>
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Show IPCSections with recommendations only after Get IPC is clicked */}
+            <IPCSections recommendations={parsedIpcSections.length > 0 ? parsedIpcSections : []} />
+            <AIRecommendations 
+              formData={{ subject, caseDescription: noticeContent }} 
+              selectedTemplate="eviction" 
+            />
+          </div>
+          
+          <div className="lg:col-span-3">
+            <NoticeBuilder 
+              content={noticeContent}
+              onChange={setNoticeContent}
+              caseDetails={caseDetails}
+            />
+          </div>
+        </div>
+      </DragDropContext>
     </div>
   );
 };

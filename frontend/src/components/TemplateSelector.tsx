@@ -22,35 +22,35 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const getTemplatesForLitigationType = (type: string): Template[] => {
     // Example templates - in a real app, these would come from an API
     const allTemplates: Template[] = [
-      {
-        id: 'breach-of-contract',
-        title: 'Breach of Contract',
+          {
+            id: 'breach-of-contract',
+            title: 'Breach of Contract',
         description: 'Standard template for contract breach notices',
         litigation_type: 'civil',
         preview: 'Dear [Recipient],\n\nThis is regarding the breach of contract...'
       },
-      {
-        id: 'property-dispute',
-        title: 'Property Dispute',
+          {
+            id: 'property-dispute',
+            title: 'Property Dispute',
         description: 'Template for property-related legal notices',
         litigation_type: 'property',
         preview: 'Dear [Recipient],\n\nThis is regarding the property dispute...'
-      },
-      {
+          },
+          {
         id: 'employment',
         title: 'Employment Dispute',
         description: 'Template for employment-related notices',
         litigation_type: 'employment',
         preview: 'Dear [Recipient],\n\nThis is regarding your employment...'
       },
-      {
+          {
         id: 'criminal',
         title: 'Criminal Complaint',
         description: 'Template for criminal complaint notices',
         litigation_type: 'criminal',
         preview: 'Dear [Recipient],\n\nThis is to inform you about the criminal complaint...'
-      }
-    ];
+          }
+        ];
 
     return allTemplates.filter(template => template.litigation_type === type);
   };

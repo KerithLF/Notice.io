@@ -25,7 +25,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ onFieldChange, litigat
       }
     };
 
-    fetchFields();
+      fetchFields();
   }, [litigation_type]);
 
   return (

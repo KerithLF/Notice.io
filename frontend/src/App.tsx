@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { LandingPage } from './pages/LandingPage';
 import { NoticePage } from './pages/NoticePage';
 import { CreateNoticePage } from './pages/CreateNoticePage';
+import { NoticePreviewPage } from './pages/NoticePreviewPage';
 
 const App: React.FC = () => {
   return (
@@ -21,14 +22,16 @@ const App: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/generate"
-                  className="px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655]"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655]"
                 >
+                  <span>⚡</span>
                   Generate Notice
                 </Link>
                 <Link
                   to="/create"
-                  className="px-4 py-2 border border-[#D6A767] text-[#D6A767] rounded-md hover:bg-[#D6A767] hover:text-white"
+                  className="flex items-center gap-2 px-4 py-2 border border-[#D6A767] text-[#D6A767] rounded-md hover:bg-[#D6A767] hover:text-white"
                 >
+                  <span>✏️</span>
                   Create New
                 </Link>
                 <button className="px-4 py-2 text-white hover:text-[#D6A767]">
@@ -47,6 +50,7 @@ const App: React.FC = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/generate" element={<NoticePage />} />
           <Route path="/create" element={<CreateNoticePage />} />
+          <Route path="/notice-preview" element={<NoticePreviewPage />} />
         </Routes>
       </div>
     </Router>
