@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
-from .generator import generate_legal_notice
-from .ipc_indexer import get_ipc_recommendations
+from backend.generator import generate_legal_notice
+from backend.ipc_indexer import get_ipc_recommendations
 
 router = APIRouter()
+
 
 class Incident(BaseModel):
     date: str
@@ -39,6 +40,24 @@ class IPCRecommendation(BaseModel):
 class NoticeResponse(BaseModel):
     notice_text: str
     ipc_recommendations: List[IPCRecommendation]
+
+class IPCRequestFlexible(BaseModel):
+    subject: str
+    incidents: List[Union[str, Incident]]
+
+@router.post("/ipc-recommendations", response_model=List[IPCRecommendation])
+async def ipc_recommendations(request: IPCRequestFlexible):
+    try:
+        print("Received request for IPC recommendations")
+        # Convert Incident objects to plain strings
+        normalized = [
+            i if isinstance(i, str) else i.description for i in request.incidents
+        ]
+        return get_ipc_recommendations(subject=request.subject)
+    except Exception as e:
+        print(f"Error in ipc_recommendations endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/generate-notice", response_model=NoticeResponse)
 async def generate_notice(request: NoticeRequest):

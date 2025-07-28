@@ -2,12 +2,11 @@ import os
 import re
 import requests
 from dotenv import load_dotenv
-from backend.templates import TEMPLATES, PLACEHOLDER_ALIASES
-from backend.utils import normalize_fuzzy_placeholders
+from .templates import TEMPLATES, PLACEHOLDER_ALIASES
+from .utils import normalize_fuzzy_placeholders
 from .ipc_indexer import get_ipc_sections
 from typing import List, Dict
 import os
-from groq import Groq
 
 load_dotenv()
 GROQ_API_KEY = os.getenv("API_KEY")
@@ -407,22 +406,8 @@ def share_notice_whatsapp(phone_number, notice_text):
         return f"❌ WhatsApp sharing failed: {e}"
 
 
-# Initialize Groq client
-client = Groq(
-    api_key=os.environ.get("GROQ_API_KEY", "your-api-key-here")
-)
-
-def generate_legal_notice(
-    litigation_type: str,
-    tone: str,
-    subject: str,
-    issue_date: str,
-    sender_details: Dict[str, str],
-    recipient_details: Dict[str, str],
-    council_details: Dict[str, str],
-    incidents: List[Dict[str, str]],
-    conclusion: str
-) -> str:
+def generate_legal_notice(litigation_type: str,tone: str,subject: str,issue_date: str,sender_details: Dict[str, str],recipient_details: Dict[str, str],council_details: Dict[str, str],incidents: List[Dict[str, str]],conclusion: str) -> str:
+    
     try:
         # Create a prompt for the LLM
         prompt = f"""Generate a professional legal notice with the following details:
@@ -466,32 +451,11 @@ Please generate a formal legal notice that:
 The notice should be formatted in a professional manner with proper spacing and sections.
 Generate the notice now:"""
 
-        # Call the LLM
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional legal assistant specializing in drafting legal notices. You understand legal terminology and proper notice formatting."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            model="mixtral-8x7b-32768",
-            temperature=0.7,
-            max_tokens=4000
-        )
+        notice_legal_text = call_groq(prompt)
+        notice_legal_text = notice_legal_text.strip()
 
-        # Extract and return the generated notice
-        if not chat_completion.choices:
-            raise Exception("No response received from LLM")
         
-        notice = chat_completion.choices[0].message.content
-        if not notice:
-            raise Exception("Empty response received from LLM")
-        
-        return notice
+        return clean_legal_notice(notice_legal_text)
 
     except Exception as e:
         print(f"Error in generate_legal_notice: {str(e)}")

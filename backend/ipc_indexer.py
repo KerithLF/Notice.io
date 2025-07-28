@@ -5,19 +5,30 @@ import numpy as np
 import re
 from typing import List, Dict
 import os
-from groq import Groq
+import requests
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
+GROQ_API_KEY = os.getenv("API_KEY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-8b-8192"
 
-# Initialize Groq client
-client = Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
 
-if not os.getenv("GROQ_API_KEY"):
-    raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env file.")
+def call_groq(prompt: str) -> str:
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3
+    }
+    res = requests.post(GROQ_URL, headers=headers, json=payload)
+    if res.status_code == 200:
+        return res.json()["choices"][0]["message"]["content"].strip()
+    raise Exception(f"GROQ API Error {res.status_code}: {res.text}")
+
 
 def get_ipc_recommendations(subject: str, incidents: List[str]) -> List[Dict[str, str]]:
     try:
@@ -30,44 +41,25 @@ Subject: {subject}
 Incidents:
 {incidents_text}
 
-Please provide 3-5 most relevant IPC sections that could be applicable to this case. For each section, include:
+Please provide 5 most relevant IPC sections that could be applicable to this case. For each section, include:
 1. The section number
 2. The title of the section
 3. A brief explanation of why it's relevant to this case
+4. Some main keywords that summarize the section
 
 Format your response as a list of sections, each starting with "Section" followed by the number. For example:
 
 Section 420: Cheating and dishonestly inducing delivery of property
 This section deals with fraudulent behavior...
+Keywords: cheating, fraud, dishonesty
 
 Section 406: Criminal breach of trust
 This section applies when...
+Keywords: breach of trust, criminal liability
 
 Please provide the recommendations now:"""
 
-        # Call the LLM
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a legal expert specializing in Indian Penal Code (IPC). You can accurately identify and explain relevant IPC sections based on case details."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            model="mixtral-8x7b-32768",
-            temperature=0.7,
-            max_tokens=2000
-        )
-
-        if not chat_completion.choices:
-            raise Exception("No response received from LLM")
-        
-        response = chat_completion.choices[0].message.content
-        if not response:
-            raise Exception("Empty response received from LLM")
+        response = call_groq(prompt)
 
         # Parse the response into structured recommendations
         recommendations = []

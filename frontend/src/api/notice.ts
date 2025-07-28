@@ -147,3 +147,28 @@ export const getIpcRecommendations = async (subject: string) => {
 
   return response.json();
 };
+
+
+
+/* Code to input both subject and incidents for IPC recommendations
+
+export const getIpcRecommendations = async (
+  subject: string,
+  incidents: string[]
+) => {
+  const response = await fetch(`${API_BASE_URL}/ipc-recommendations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ subject, incidents }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get IPC recommendations');
+  }
+
+  return response.json();
+};
+
+*/
