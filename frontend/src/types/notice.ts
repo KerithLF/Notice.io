@@ -4,6 +4,8 @@ export interface Incident {
 }
 
 export interface NoticeData {
+  recipientFather_name: string;
+  senderFather_name: string;
   litigation_type: string;
   tone: string;
   subject: string;

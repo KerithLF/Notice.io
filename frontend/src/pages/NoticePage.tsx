@@ -17,9 +17,11 @@ export const NoticePage: React.FC = () => {
     subject: '',
     sender_name: '',
     sender_address: '',
+    senderFather_name: '',
     sender_mail: '',
     sender_phone: '',
     recipient_name: '',
+    recipientFather_name: '',
     recipient_address: '',
     recipient_mail: '',
     recipient_phone: '',
@@ -88,9 +90,9 @@ export const NoticePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6F3] p-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-[#1A1A1A] mb-2">Generate Legal Notice</h1>
-        <p className="text-gray-600 mb-8">Fill in the details to generate a professional legal notice</p>
+      <div className="max-w-[80%] mx-auto">
+        <h1 className="text-3xl text-center font-bold text-[#1A1A1A] mb-2">Generate Legal Notice</h1>
+        <p className="text-gray-600 mb-8 text-center">Fill in the details to generate a professional legal notice</p>
 
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -175,14 +177,23 @@ export const NoticePage: React.FC = () => {
             {/* Sender Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Sender Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-row gap-4">
                 <input
                   type="text"
                   name="sender_name"
                   value={formData.sender_name}
                   onChange={handleInputChange}
                   placeholder="Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  required
+                />
+                <input
+                  type='text'
+                  name='Father_name'
+                  value={formData.senderFather_name}
+                  onChange={handleInputChange}
+                  placeholder='Father Name'
+                  className='flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent'
                   required
                 />
                 <input
@@ -191,7 +202,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.sender_address}
                   onChange={handleInputChange}
                   placeholder="Address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -200,7 +211,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.sender_mail}
                   onChange={handleInputChange}
                   placeholder="Email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -209,7 +220,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.sender_phone}
                   onChange={handleInputChange}
                   placeholder="Phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
               </div>
@@ -218,14 +229,23 @@ export const NoticePage: React.FC = () => {
             {/* Recipient Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Recipient Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-row gap-4">
                 <input
                   type="text"
                   name="recipient_name"
                   value={formData.recipient_name}
                   onChange={handleInputChange}
                   placeholder="Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  required
+                />
+                <input
+                  type='text'
+                  name='Father_name'
+                  value={formData.recipientFather_name}
+                  onChange={handleInputChange}
+                  placeholder='Father Name'
+                  className='flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent'
                   required
                 />
                 <input
@@ -234,7 +254,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.recipient_address}
                   onChange={handleInputChange}
                   placeholder="Address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -243,7 +263,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.recipient_mail}
                   onChange={handleInputChange}
                   placeholder="Email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -252,7 +272,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.recipient_phone}
                   onChange={handleInputChange}
                   placeholder="Phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
               </div>
@@ -261,14 +281,14 @@ export const NoticePage: React.FC = () => {
             {/* Council Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Council Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-row gap-4">
                 <input
                   type="text"
                   name="council_name"
                   value={formData.council_name}
                   onChange={handleInputChange}
                   placeholder="Name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -277,7 +297,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.council_address}
                   onChange={handleInputChange}
                   placeholder="Address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -286,7 +306,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.council_mail}
                   onChange={handleInputChange}
                   placeholder="Email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
                 <input
@@ -295,7 +315,7 @@ export const NoticePage: React.FC = () => {
                   value={formData.council_phone}
                   onChange={handleInputChange}
                   placeholder="Phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
                 />
               </div>
