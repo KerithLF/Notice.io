@@ -60,7 +60,7 @@ export const NoticePreviewPage: React.FC = () => {
           <div className="text-red-500 mb-4">❌</div>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
-            onClick={() => navigate('/generate')}
+            onClick={() => navigate('/generate', { state: { formData } }) }
             className="px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655]"
           >
             Try Again
@@ -118,7 +118,7 @@ export const NoticePreviewPage: React.FC = () => {
                 ))}
               </div>
               <button
-                onClick={() => navigate('/generate')}
+                onClick={() => navigate('/generate', { state: { formData } })}
                 className="mt-6 w-full bg-[#D6A767] text-white py-2 rounded-md hover:bg-[#c49655] transition-colors"
               >
                 Edit Notice

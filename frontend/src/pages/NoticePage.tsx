@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { NoticeData } from '../types/notice';
+// import { useLocation } from 'react-router-dom';
 
 interface Incident {
   date: string;
@@ -34,6 +35,19 @@ export const NoticePage: React.FC = () => {
     conclusion: '',
     custom_fields: {}
   });
+
+  // const { state } = useLocation();
+  // const [formData, setFormData] = useState({
+  //   litigationType: state?.litigationType || "",
+  //   tone: state?.tone || "",
+  //   issueDate: state?.issueDate || "",
+  //   problemDate: state?.problemDate || "",
+  //   caseDescription: state?.caseDescription || "",
+  //   noticePeriod: state?.noticePeriod || "",
+  //   sender: state?.sender || {},
+  //   recipient: state?.recipient || {},
+  //   selectedTemplate: state?.selectedTemplate || "",
+  // });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -98,6 +112,13 @@ export const NoticePage: React.FC = () => {
                   <option value="Civil">Civil Litigation</option>
                   <option value="Criminal">Criminal Litigation</option>
                   <option value="Property">Property Dispute</option>
+                  <option value="Family">Family Law</option>
+                  <option value="Administrative">Administrative Litigation</option>
+                  <option value="IP">IP Litigation</option>
+                  <option value="Tax">Tax Litigation</option>
+                  <option value="Insolvency and Bankruptcy">Insolvency & Bankruptcy</option>
+                  <option value="Environmental">Environmental Law</option>
+                  <option value="Public Interest">Public Interest Litigation</option>
                 </select>
               </div>
               <div>
@@ -112,6 +133,10 @@ export const NoticePage: React.FC = () => {
                 >
                   <option value="formal">Formal</option>
                   <option value="casual">Casual</option>
+                  <option value="Assertive">Assertive</option>
+                  <option value="Empathetic">Empathetic</option>
+                  <option value="Aggressive">Aggressive</option>
+                  <option value="Negotiatory">Formal</option>
                   <option value="stern">Stern</option>
                 </select>
               </div>
