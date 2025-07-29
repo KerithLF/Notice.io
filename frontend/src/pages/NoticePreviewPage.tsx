@@ -121,7 +121,7 @@ export const NoticePreviewPage: React.FC = () => {
                 onClick={() => navigate('/generate', { state: { formData } })}
                 className="mt-6 w-full bg-[#D6A767] text-white py-2 rounded-md hover:bg-[#c49655] transition-colors"
               >
-                Edit Notice
+                Edit Fields
               </button>
             </div>
           </div>

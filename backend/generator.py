@@ -31,115 +31,115 @@ def call_groq(prompt: str) -> str:
 
 
 
-def classify_notice_type(description: str) -> str:
-    prompt = f"""
-You are a legal assistant. Classify the notice type for the following case:
+# def classify_notice_type(description: str) -> str:
+#     prompt = f"""
+# You are a legal assistant. Classify the notice type for the following case:
 
-\"\"\"{description}\"\"\"
+# \"\"\"{description}\"\"\"
 
-Choose from:
-- Payment Recovery
-- Employment Termination
-- Contract Breach
-- Loan Default
-- Eviction Notice
-- Loan Default Notice
-- Cheque Bounce / Dishonour of Cheque Notice
-- Consumer Complaint Notice
-- Defamation / Harassment Notice
-- Lease Termination Notice
-- Legal Demand Notice (General)
-"""
-    return call_groq(prompt)
-
-
-
-def summarize_incident(description: str, tone="formal") -> str:
-    prompt = f"""
-
-You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
-
-Using the rules below, generate a complete, professionally worded legal notice in plain English, unless otherwise specified:
-
-RULES AND STRUCTURE TO FOLLOW:
-
-1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
-2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
-3. On the top-right corner, mention the date of issuing the notice.
-4. After that, clearly mention the recipient details:
-   - Name of recipient
-   - Father’s/Husband’s name
-   - Full address with pin code
-   - Contact details if available (phone/email)
-   - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
-5. Include a subject line: "Subject: Legal Notice"
-6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
-   - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
-7. Introduce the sender and recipient and their relationship/acquaintance.
-8. Describe clearly and chronologically the events that led to the dispute.
-9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
-10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
-11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
-12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
-13. Mention that a copy of the legal notice is retained for records and possible future legal action.
-14. End with the closing salutation and the sender’s signature.
-
-TONE AND STYLE:
-- Generate a legal notice following the above rules for the given incident in a {tone} legal tone.
-- Avoid ambiguity.
-- Follow proper legal formatting conventions.
-
-INPUT DATA:
-- Sender details: {{sender_details}}
-- Recipient details: {{recipient_details}}
-- Event description: {{event_description}}
-- Applicable laws/acts: {{applicable_laws}}
-- Time limit for response: {{time_limit}}
-
-OUTPUT:
-A fully drafted legal notice following the above rules, ready to be printed and sent.
-
-Now, using the above information and structure, draft the perfect legal notice.
-
-
-\"\"\"{description}\"\"\"
-"""
-    return call_groq(prompt)
+# Choose from:
+# - Payment Recovery
+# - Employment Termination
+# - Contract Breach
+# - Loan Default
+# - Eviction Notice
+# - Loan Default Notice
+# - Cheque Bounce / Dishonour of Cheque Notice
+# - Consumer Complaint Notice
+# - Defamation / Harassment Notice
+# - Lease Termination Notice
+# - Legal Demand Notice (General)
+# """
+#     return call_groq(prompt)
 
 
 
-def recommend_ipc_llm(description: str) -> list:
-    ipc_context = "\n\n".join(get_ipc_sections(description))
-    prompt = f"""
-You are a legal expert assistant. Based on the following case description and subject, recommend the most relevant IPC (Indian Penal Code) sections with their section number, title, and a brief description why they apply from the {ipc_context} with respected keywords, so that the user can easily find the relevant section:
+# def summarize_incident(description: str, tone="formal") -> str:
+#     prompt = f"""
 
-Case Description:
-""{description}""
+# You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
 
-Respond in this format:
-- Section 420: Cheating
-         Explanation:
-         keywords:
-         - cheating
-         - fraud
-         - dishonesty
-         - deceit
-         - misrepresentation
-         - breach of trust
-- Section 448: House Trespass
-         Explanation:
-         keywords:
-         - trespass
-         - house
-         - breach
-         - violation
-         - trespass
-         - house
-- ...
-"""
+# Using the rules below, generate a complete, professionally worded legal notice in plain English, unless otherwise specified:
 
-    response = call_groq(prompt)
-    return response.strip().split("\\n")
+# RULES AND STRUCTURE TO FOLLOW:
+
+# 1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
+# 2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
+# 3. On the top-right corner, mention the date of issuing the notice.
+# 4. After that, clearly mention the recipient details:
+#    - Name of recipient
+#    - Father’s/Husband’s name
+#    - Full address with pin code
+#    - Contact details if available (phone/email)
+#    - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
+# 5. Include a subject line: "Subject: Legal Notice"
+# 6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
+#    - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
+# 7. Introduce the sender and recipient and their relationship/acquaintance.
+# 8. Describe clearly and chronologically the events that led to the dispute.
+# 9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
+# 10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
+# 11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
+# 12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
+# 13. Mention that a copy of the legal notice is retained for records and possible future legal action.
+# 14. End with the closing salutation and the sender’s signature.
+
+# TONE AND STYLE:
+# - Generate a legal notice following the above rules for the given incident in a {tone} legal tone.
+# - Avoid ambiguity.
+# - Follow proper legal formatting conventions.
+
+# INPUT DATA:
+# - Sender details: {{sender_details}}
+# - Recipient details: {{recipient_details}}
+# - Event description: {{event_description}}
+# - Applicable laws/acts: {{applicable_laws}}
+# - Time limit for response: {{time_limit}}
+
+# OUTPUT:
+# A fully drafted legal notice following the above rules, ready to be printed and sent.
+
+# Now, using the above information and structure, draft the perfect legal notice.
+
+
+# \"\"\"{description}\"\"\"
+# """
+#     return call_groq(prompt)
+
+
+
+# def recommend_ipc_llm(description: str) -> list:
+#     ipc_context = "\n\n".join(get_ipc_sections(description))
+#     prompt = f"""
+# You are a legal expert assistant. Based on the following case description and subject, recommend the most relevant IPC (Indian Penal Code) sections with their section number, title, and a brief description why they apply from the {ipc_context} with respected keywords, so that the user can easily find the relevant section:
+
+# Case Description:
+# ""{description}""
+
+# Respond in this format:
+# - Section 420: Cheating
+#          Explanation:
+#          keywords:
+#          - cheating
+#          - fraud
+#          - dishonesty
+#          - deceit
+#          - misrepresentation
+#          - breach of trust
+# - Section 448: House Trespass
+#          Explanation:
+#          keywords:
+#          - trespass
+#          - house
+#          - breach
+#          - violation
+#          - trespass
+#          - house
+# - ...
+# """
+
+#     response = call_groq(prompt)
+#     return response.strip().split("\\n")
 
 
 def fill_notice_template(notice_type: str, data: dict, summarized_body: str) -> str:
@@ -151,10 +151,12 @@ def fill_notice_template(notice_type: str, data: dict, summarized_body: str) -> 
         issue_date=data.get("issue_date", ""),
         problem_date=data.get("problem_date", ""),
         recipient_name=data.get("recipient_name", ""),
+        recipient_father_name=data.get("recipientFather_name", ""),
         recipient_address=data.get("recipient_address", ""),
         subject=data.get("subject", "Regarding your legal obligation"),
         total_amount=data.get("total_amount", ""),
         sender_name=data.get("sender_name", ""),
+        sender_father_name=data.get("senderFather_name", ""),
         sender_address=data.get("sender_address", ""),
         notice_type=notice_type,
         summarized_body=summarized_body,
@@ -176,108 +178,110 @@ def clean_legal_notice(text):
     return text.strip()
 
 
-def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = False) -> str | tuple[str, str]:
-    """
-    Create a legal notice based on the provided data.
+# def create_notice(data: dict, tone="formal", selected_type=None, return_ipc = False) -> str | tuple[str, str]:
+#     """
+#     Create a legal notice based on the provided data.
     
-    Args:
-        data (dict): Dictionary containing notice details
-        tone (str, optional): Tone of the notice. Defaults to "formal"
-        selected_type (str, optional): Type of notice. Defaults to None
-        return_ipc (bool, optional): Whether to return IPC sections. Defaults to False
+#     Args:
+#         data (dict): Dictionary containing notice details
+#         tone (str, optional): Tone of the notice. Defaults to "formal"
+#         selected_type (str, optional): Type of notice. Defaults to None
+#         return_ipc (bool, optional): Whether to return IPC sections. Defaults to False
         
-    Returns:
-        Union[str, Tuple[str, str]]: Either the notice text, or a tuple of (ipc_sections, notice_text)
-    """
-    if not data.get("incident_description"):
-        raise ValueError("incident_description is required in data")
+#     Returns:
+#         Union[str, Tuple[str, str]]: Either the notice text, or a tuple of (ipc_sections, notice_text)
+#     """
+#     if not data.get("incident_description"):
+#         raise ValueError("incident_description is required in data")
         
-    ipc_sections = recommend_ipc_llm(data["incident_description"])
-    ipc_section_text = "\n".join(f"- {sec}" for sec in ipc_sections)
+#     ipc_sections = recommend_ipc_llm(data["incident_description"])
+#     ipc_section_text = "\n".join(f"- {sec}" for sec in ipc_sections)
 
-    # Print for debugging
-    print(f"Creating notice with description: {data['incident_description']}")
+#     # Print for debugging
+#     print(f"Creating notice with description: {data['incident_description']}")
     
-    prompt = f"""
-You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
+#     prompt = f"""
+# You are a highly skilled legal assistant specializing in drafting formal legal notices on behalf of clients, following standard Indian legal practices. 
 
-Using the rules below, generate a complete legal notice in a {tone} tone, professionally worded legal notice in plain English, unless otherwise specified:
+# Using the rules below, generate a complete legal notice in a {tone} tone, professionally worded legal notice in plain English, unless otherwise specified:
 
-- **Litigation Type**: {selected_type or data.get('notice_type')}
-- **Issue Date**: {data.get('issue_date')}
-- **Date of Problem**: {data.get('problem_date')}
-- **Notice Period**: {data.get('notice_period')}
-- **Total Amount**: {data.get('total_amount')}
+# - **Litigation Type**: {selected_type or data.get('notice_type')}
+# - **Issue Date**: {data.get('issue_date')}
+# - **Date of Problem**: {data.get('problem_date')}
+# - **Notice Period**: {data.get('notice_period')}
+# - **Total Amount**: {data.get('total_amount')}
 
-**Sender Details:**
-- Name: {data.get('sender_name')}
-- Address: {data.get('sender_address')}
-- Title: {data.get('title') or ''}
-- Company: {data.get('company') or ''}
+# **Sender Details:**
+# - Name: {data.get('sender_name')}
+# - Father's Name: {data.get('senderFather_name')}
+# - Address: {data.get('sender_address')}
+# - Title: {data.get('title') or ''}
+# - Company: {data.get('company') or ''}
 
-**Recipient Details:**
-- Name: {data.get('recipient_name')}
-- Address: {data.get('recipient_address')}
-- Title: {data.get('recipient_title') or ''}
-- Company: {data.get('recipient_company') or ''}
+# **Recipient Details:**
+# - Name: {data.get('recipient_name')}
+# - Father's Name: {data.get('recipientFather_name')}
+# - Address: {data.get('recipient_address')}
+# - Title: {data.get('recipient_title') or ''}
+# - Company: {data.get('recipient_company') or ''}
 
-**Case Description**:
-{data.get('incident_description')}
+# **Case Description**:
+# {data.get('incident_description')}
 
-Sign the notice as:
-{data.get('signature')}
+# Sign the notice as:
+# {data.get('signature')}
 
-RULES AND STRUCTURE TO FOLLOW:
+# RULES AND STRUCTURE TO FOLLOW:
 
-1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
-2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
-3. On the top-right corner, mention the date of issuing the notice.
-4. After that, clearly mention the recipient details:
-   - Name of recipient
-   - Father’s/Husband’s name
-   - Full address with pin code
-   - Contact details if available (phone/email)
-   - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
-5. Include a subject line: "Subject: Legal Notice"
-6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
-   - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
-7. Introduce the sender and recipient and their relationship/acquaintance.
-8. Describe clearly and chronologically the events that led to the dispute.
-9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
-10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
-11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
-12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
-13. Mention that a copy of the legal notice is retained for records and possible future legal action.
-14. End with the closing salutation and the sender’s signature.
+# 1. Start the notice on a lawyer’s letterhead (just mention: "[On the letterhead of <Lawyer’s Name>]").
+# 2. Center-align the modes of service (e.g., "By Registered Post A/D", "By Email") at the top.
+# 3. On the top-right corner, mention the date of issuing the notice.
+# 4. After that, clearly mention the recipient details:
+#    - Name of recipient
+#    - Father’s/Husband’s name
+#    - Full address with pin code
+#    - Contact details if available (phone/email)
+#    - If multiple recipients, list them with numbers and write “also at:” for their additional addresses if any.
+# 5. Include a subject line: "Subject: Legal Notice"
+# 6. In the body, first mention the sender’s details (name, parent’s/husband’s name, full address, pin code, contact details).
+#    - If a lawyer is sending on behalf of someone, refer to the sender as “my client.”
+# 7. Introduce the sender and recipient and their relationship/acquaintance.
+# 8. Describe clearly and chronologically the events that led to the dispute.
+# 9. Refer to the recipient(s) as “the addressee” or “addressee no.1” etc. depending on number of recipients.
+# 10. Mention the specific laws or provisions relied upon by the sender for claiming remedy.
+# 11. Clearly state the instructions to the recipient and specify the exact time limit within which they must comply or respond.
+# 12. Warn that failure to comply within the allotted time will lead to appropriate legal proceedings without further notice.
+# 13. Mention that a copy of the legal notice is retained for records and possible future legal action.
+# 14. End with the closing salutation and the sender’s signature.
 
-TONE AND STYLE:
-- Be formal, precise, and professional.
-- Avoid ambiguity.
-- Follow proper legal formatting conventions.
+# TONE AND STYLE:
+# - Be formal, precise, and professional.
+# - Avoid ambiguity.
+# - Follow proper legal formatting conventions.
 
-INPUT DATA:
-- Sender details: {{sender_details}}
-- Recipient details: {{recipient_details}}
-- Event description: {{event_description}}
-- Applicable laws/acts: {{applicable_laws}}
-- Time limit for response: {{time_limit}}
+# INPUT DATA:
+# - Sender details: {{sender_details}}
+# - Recipient details: {{recipient_details}}
+# - Event description: {{event_description}}
+# - Applicable laws/acts: {{applicable_laws}}
+# - Time limit for response: {{time_limit}}
 
-OUTPUT:
-A fully drafted legal notice following the above rules, ready to be printed and sent.
+# OUTPUT:
+# A fully drafted legal notice following the above rules, ready to be printed and sent.
 
-Now, using the above information and structure, draft the perfect legal notice.
+# Now, using the above information and structure, draft the perfect legal notice.
 
 
-Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.:
+# Remove unnecessary Headings, that describe what the notice is about, like "FORMAL OPENING", "MENTION OF LEGAL GROUNDS OR DISPUTE", "INSTRUCTIONS OR DEMANDS", "CONSEQUENCES OF NOT RESPONDING", "SIGNATURE LINE" etc.:
 
-Respond only with the formatted notice.
-"""
-    notice_text = call_groq(prompt)
+# Respond only with the formatted notice.
+# """
+#     notice_text = call_groq(prompt)
 
-    if return_ipc:
-        return clean_legal_notice(ipc_section_text), clean_legal_notice(notice_text)
+#     if return_ipc:
+#         return clean_legal_notice(ipc_section_text), clean_legal_notice(notice_text)
 
-    return clean_legal_notice(notice_text)
+#     return clean_legal_notice(notice_text)
 
 
 from reportlab.lib.pagesizes import A4
@@ -406,25 +410,27 @@ def share_notice_whatsapp(phone_number, notice_text):
         return f"❌ WhatsApp sharing failed: {e}"
 
 
-def generate_legal_notice(litigation_type: str,tone: str,subject: str,issue_date: str,sender_details: Dict[str, str],recipient_details: Dict[str, str],council_details: Dict[str, str],incidents: List[Dict[str, str]],conclusion: str) -> str:
+def generate_legal_notice(litigation_type: str,sub_type: str,tone: str,subject: str,issue_date: str,sender_details: Dict[str, str],recipient_details: Dict[str, str],council_details: Dict[str, str],incidents: List[Dict[str, str]],conclusion: str) -> str:
     
     try:
-        # Create a prompt for the LLM
         prompt = f"""Generate a professional legal notice with the following details:
 
 Litigation Type: {litigation_type}
+Sub-Type: {sub_type}
 Tone: {tone}
 Subject: {subject}
 Issue Date: {issue_date}
 
 Sender Details:
 Name: {sender_details['name']}
+Father's Name: {sender_details.get('father_name', '')}
 Address: {sender_details['address']}
 Email: {sender_details['email']}
 Phone: {sender_details['phone']}
 
 Recipient Details:
 Name: {recipient_details['name']}
+Father's Name: {recipient_details.get('father_name', '')}
 Address: {recipient_details['address']}
 Email: {recipient_details['email']}
 Phone: {recipient_details['phone']}
@@ -442,11 +448,12 @@ Conclusion:
 {conclusion}
 
 Please generate a formal legal notice that:
-1. Uses appropriate legal language and formatting
-2. Maintains the specified tone ({tone})
-3. Clearly states all incidents and their dates
-4. Includes a proper conclusion with any demands or requirements
-5. Follows standard legal notice structure with proper addressing and closing
+- Follow the template provided from the {TEMPLATES} file according to the sub-type{sub_type} specified
+- Uses appropriate legal language and formatting
+- Maintains the specified tone ({tone})
+- Clearly states all incidents and their dates in chronological order
+- Includes a proper conclusion with any demands or requirements
+- Follows standard legal notice structure with proper addressing and closing
 
 The notice should be formatted in a professional manner with proper spacing and sections.
 Generate the notice now:"""

@@ -30,81 +30,51 @@ def call_groq(prompt: str) -> str:
     raise Exception(f"GROQ API Error {res.status_code}: {res.text}")
 
 
+import json
+
 def get_ipc_recommendations(subject: str, incidents: List[str]) -> List[Dict[str, str]]:
     try:
-        # Create a prompt for the LLM
         incidents_text = "\n".join(f"- {incident}" for incident in incidents)
-        prompt = f"""Based on the following legal case details, recommend relevant IPC (Indian Penal Code) sections that may be applicable:
+
+        prompt = f"""
+You are an expert Indian legal assistant. Based on the case information below, return the 5 most relevant IPC sections in the following JSON format:
+
+[
+  {{
+    "section": "420",
+    "title": "Cheating and dishonestly inducing delivery of property",
+    "description": "This section is applicable because the accused committed fraud and obtained services without paying.",
+    "keywords": ["cheating", "fraud", "dishonesty"]
+  }},
+  ...
+]
+
+Do not include any explanations or text before or after the JSON.
 
 Subject: {subject}
 
 Incidents:
 {incidents_text}
-
-Please provide 5 most relevant IPC sections that could be applicable to this case. For each section, include:
-1. The section number
-2. The title of the section
-3. A brief explanation of why it's relevant to this case
-4. Some main keywords that summarize the section
-
-Format your response as a list of sections, each starting with "Section" followed by the number. For example:
-
-Section 420: Cheating and dishonestly inducing delivery of property
-This section deals with fraudulent behavior...
-Keywords: cheating, fraud, dishonesty
-
-Section 406: Criminal breach of trust
-This section applies when...
-Keywords: breach of trust, criminal liability
-
-Please provide the recommendations now:"""
+"""
 
         response = call_groq(prompt)
 
-        # Parse the response into structured recommendations
-        recommendations = []
-        current_section = {}
-        
-        for line in response.split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-                
-            if line.lower().startswith('section'):
-                # Save previous section if it exists
-                if current_section and all(key in current_section for key in ['section', 'title', 'description']):
-                    recommendations.append(current_section)
-                current_section = {"section": "", "title": "", "description": ""}
-                # Extract section number and title
-                parts = line.split(':', 1)
-                current_section["section"] = parts[0].strip()
-                if len(parts) > 1:
-                    current_section["title"] = parts[1].strip()
-            elif current_section:
-                # If we have a current section, add non-empty lines to description
-                if current_section["description"]:
-                    current_section["description"] += " " + line
-                else:
-                    # If it's the first line after section and we don't have a title
-                    if not current_section["title"]:
-                        current_section["title"] = line
-                    else:
-                        current_section["description"] = line
+        ipc_data = json.loads(response)
 
-        # Add the last section
-        if current_section and all(key in current_section for key in ['section', 'title', 'description']):
-            recommendations.append(current_section)
+        if not isinstance(ipc_data, list) or not all('section' in s and 'title' in s and 'description' in s for s in ipc_data):
+            raise ValueError("Invalid structure in LLM response.")
 
-        # If no recommendations were parsed, raise an error
-        if not recommendations:
-            raise Exception("Failed to parse IPC recommendations from LLM response")
+        # # Optional: Drop keywords if you don’t need them
+        # for section in ipc_data:
+        #     section.pop('keywords', None)
 
-        return recommendations
+        return ipc_data
 
     except Exception as e:
         print(f"Error in get_ipc_recommendations: {str(e)}")
         print(f"LLM Response: {response if 'response' in locals() else 'No response'}")
         raise Exception(f"Failed to get IPC recommendations: {str(e)}")
+
 
 def extract_ipc_sections(pdf_path):
     sections = []

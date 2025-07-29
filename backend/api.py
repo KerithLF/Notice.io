@@ -14,14 +14,17 @@ class Incident(BaseModel):
 
 class NoticeRequest(BaseModel):
     litigation_type: str
+    sub_litigation_type: str
     tone: str
     subject: str
     issue_date: str
     sender_name: str
+    senderFather_name: Optional[str] = None
     sender_address: str
     sender_mail: str
     sender_phone: str
     recipient_name: str
+    recipientFather_name: Optional[str] = None
     recipient_address: str
     recipient_mail: str
     recipient_phone: str
@@ -66,17 +69,20 @@ async def generate_notice(request: NoticeRequest):
         # Generate the notice text using the LLM
         notice_text = generate_legal_notice(
             litigation_type=request.litigation_type,
+            sub_type=request.sub_litigation_type,
             tone=request.tone,
             subject=request.subject,
             issue_date=request.issue_date,
             sender_details={
                 "name": request.sender_name,
+                "father_name": request.senderFather_name,
                 "address": request.sender_address,
                 "email": request.sender_mail,
                 "phone": request.sender_phone
             },
             recipient_details={
                 "name": request.recipient_name,
+                "father_name": request.recipientFather_name,
                 "address": request.recipient_address,
                 "email": request.recipient_mail,
                 "phone": request.recipient_phone
