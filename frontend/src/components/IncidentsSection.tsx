@@ -46,7 +46,7 @@ export const IncidentsSection: React.FC<IncidentsSectionProps> = ({ incidents, o
             <div className="max-w-xs min-w-[180px] w-full md:w-60">
               <label htmlFor={`incident-date-mode-${idx}`} className="block text-sm font-semibold text-gray-800 mb-2 tracking-wide">
                 <span className="inline-flex items-center gap-1">
-                  <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 7V3M16 7V3M4 11H20M5 21H19A2 2 0 0021 19V7A2 2 0 0019 5H5A2 2 0 003 7V19A2 2 0 005 21Z" /></svg>
+                  <svg className="w-4 h-4 text-black-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 7V3M16 7V3M4 11H20M5 21H19A2 2 0 0021 19V7A2 2 0 0019 5H5A2 2 0 003 7V19A2 2 0 005 21Z" /></svg>
                   Date
                 </span> 
               </label>
@@ -54,10 +54,10 @@ export const IncidentsSection: React.FC<IncidentsSectionProps> = ({ incidents, o
                 <button
                   id={`incident-date-mode-${idx}`}
                   type="button"
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm ${
+                  className={`px-3 py-1.5 rounded-lg text-xs bg-[#D6A767] font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm ${
                     incident.date === 'full-date'
-                      ? 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                      ? 'text-white '
+                      : ' text-white hover:bg-[#c49655]'
                   }`}
                   onClick={() =>
                     handleIncidentChange(
@@ -71,14 +71,14 @@ export const IncidentsSection: React.FC<IncidentsSectionProps> = ({ incidents, o
                   {incident.date !== 'full-date' ? (
                     <>
                       <span className="inline-flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3" /></svg>
+                        
                         Full Date
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="inline-flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 7V3M16 7V3" /></svg>
+                        
                         Month & Year
                       </span>
                     </>
@@ -129,7 +129,7 @@ export const IncidentsSection: React.FC<IncidentsSectionProps> = ({ incidents, o
             <div className="flex-1 flex flex-col">
               <label htmlFor={`incident-description-${idx}`} className="block text-sm font-semibold text-gray-800 mb-2 tracking-wide">
                 <span className="inline-flex items-center gap-1">
-                  <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 16h8M8 12h8M8 8h8M4 6h16M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6" /></svg>
+                  <svg className="w-4 h-4 text-black-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 16h8M8 12h8M8 8h8M4 6h16M4 6v12a2 2 0 002 2h12a2 2 0 002-2V6" /></svg>
                   Description
                 </span>
               </label>

@@ -1,6 +1,5 @@
 TEMPLATES = {
 
-
     "Cheque Bounce": """
 From :
 Sri.{sender_name},
@@ -14,20 +13,19 @@ Address: {recipient_address}
 
 Dear Sir/Ma’am,
 
-I {council_name}, under the instructions of Sri.{sender_name},and duly authorized to give you this notice hereby notify you – 
-1.	That … {incident1}.
-2.	That … {incident2}.
+{council_contributor_line}
 
-	That you had issued the said cheque despite your knowledge that you had no funds in your account. You have cheated the said firm and it seems that you do not want to pay the amount of Rs.{amount} to the payee. 
-	Through this notice you are called upon to pay the aforesaid payee an amount of Rs.{amount} Within 15 days of the receipt of this notice failing which the aforementioned party shall be compelled to initiate recovery proceedings against you in the court of law and shall also initiate proceedings under Section 138 of the Negotiable instruments Act, (1881) and then you shall also be liable for the cost of the proceedings. 
+{incidents}
 
+{para3_num}. That you had issued the said cheque despite your knowledge that you had no funds in your account. You have cheated the said firm and it seems that you do not want to pay the amount of Rs.{amount} to the payee. 
 
-Yours Faithfully,
-
+{para4_num}. Through this notice you are called upon to pay the aforesaid payee an amount of Rs.{amount} Within 15 days of the receipt of this notice failing which the aforementioned party shall be compelled to initiate recovery proceedings against you in the court of law and shall also initiate proceedings under Section 138 of the Negotiable instruments Act, (1881) and then you shall also be liable for the cost of the proceedings. 
 
 
 Date : {issue_date}
 Place : {sender_address}
+
+{right_faithfully}
 
 """
 }
@@ -41,10 +39,6 @@ PLACEHOLDER_ALIASES = {
     "insert name": "sender_name",
     "insert address": "sender_address",
     "insert signature": "signature",
-    "recipient title": "recipient_title",
-    "recipient company": "recipient_company",
-    "problem date": "problem_date",
-    "notice period": "notice_period"
 }
 
 

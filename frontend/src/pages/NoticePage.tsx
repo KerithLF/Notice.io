@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NoticeData } from '../types/notice';
+import { IncidentsSection } from '../components/IncidentsSection';
+import { MapPinnedIcon } from 'lucide-react';
+import {
+  User,
+  Phone,
+  Mail,
+} from "lucide-react";
 // import { useLocation } from 'react-router-dom';
 
-interface Incident {
-  date: string;
-  description: string;
+
+
+interface Recipient {
+  recipient_name: string;
+  recipientFather_name: string;
+  recipient_address: string;
+  recipient_mail: string;
+  recipient_phone: string;
 }
 
 export const NoticePage: React.FC = () => {
@@ -21,19 +33,27 @@ export const NoticePage: React.FC = () => {
     senderFather_name: '',
     sender_mail: '',
     sender_phone: '',
-    recipient_name: '',
-    recipientFather_name: '',
-    recipient_address: '',
-    recipient_mail: '',
-    recipient_phone: '',
     council_name: '',
     council_address: '',
     council_mail: '',
     council_phone: '',
+    contributor_name: '',
+    contributor_address: '',
+    contributor_mail: '',
+    contributor_phone: '',
+    recipients: [
+      {
+        recipient_name: '',
+        recipientFather_name: '',
+        recipient_address: '',
+        recipient_mail: '',
+        recipient_phone: '',
+      },
+    ],
     incidents: [
-      { date: '', description: '' },
-      { date: '', description: '' },
-      { date: '', description: '' }
+      { date: '', description: '', month: '', year: '', fullDate: '' },
+      { date: '', description: '', month: '', year: '', fullDate: '' },
+      { date: '', description: '', month: '', year: '', fullDate: '' }
     ],
     conclusion: '',
     custom_fields: {}
@@ -42,12 +62,17 @@ export const NoticePage: React.FC = () => {
   const editFormData = location.state?.formData as NoticeData;
 
   useEffect(() => {
-    if(editFormData) setFormData(editFormData)
-  },[editFormData])
+    if (editFormData) setFormData(editFormData)
+  }, [editFormData])
 
   console.log(formData)
 
   const [subLitigationTypes, setSubLitigationTypes] = useState<string[]>([]);
+
+  // Issue date state
+  const [issueDateMode, setIssueDateMode] = useState<'full' | 'month-year'>('full');
+  const [issueMonth, setIssueMonth] = useState('');
+  const [issueYear, setIssueYear] = useState('');
 
   const litigationTypeOptions: { [key: string]: string[] } = {
     'Civil': ['Contract Dispute', 'Property Dispute', 'Tort', 'Consumer Dispute', 'Cheque Bounce'],
@@ -91,26 +116,37 @@ export const NoticePage: React.FC = () => {
     }));
   };
 
-  const handleIncidentChange = (index: number, field: keyof Incident, value: string) => {
+  // Remove handleAddRecipient (old version)
+  // Add new handlers for recipients:
+  const handleRecipientChange = (index: number, field: keyof Recipient, value: string) => {
     setFormData(prev => ({
       ...prev,
-      incidents: prev.incidents.map((incident, i) =>
-        i === index ? { ...incident, [field]: value } : incident
-      )
+      recipients: prev.recipients.map((recipient, i) =>
+        i === index ? { ...recipient, [field]: value } : recipient
+      ),
     }));
   };
 
-  const handleAddIncident = () => {
+  const handleAddRecipient = () => {
     setFormData(prev => ({
       ...prev,
-      incidents: [...prev.incidents, { date: '', description: '' }]
+      recipients: [
+        ...prev.recipients,
+        {
+          recipient_name: '',
+          recipientFather_name: '',
+          recipient_address: '',
+          recipient_mail: '',
+          recipient_phone: '',
+        },
+      ],
     }));
   };
 
-  const handleRemoveIncident = (index: number) => {
+  const handleRemoveRecipient = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      incidents: prev.incidents.filter((_, i) => i !== index)
+      recipients: prev.recipients.filter((_, i) => i !== index),
     }));
   };
 
@@ -120,16 +156,18 @@ export const NoticePage: React.FC = () => {
     navigate('/notice-preview', { state: { formData } });
   };
 
+  console.log(formData)
+
   return (
     <div className="min-h-screen bg-[#FAF6F3] p-6">
       <div className="max-w-[80%] mx-auto">
         <h1 className="text-3xl text-center font-bold text-[#1A1A1A] mb-2">Generate Legal Notice </h1>
         <p className="text-gray-600 mb-8 text-center">Fill in the details to generate a professional legal notice</p>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="bg-white rounded-lg p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Details */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 py-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Litigation Type
@@ -197,22 +235,61 @@ export const NoticePage: React.FC = () => {
             </div>
 
             {/* Issue Date & Subject */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 py-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Issue Date
-                </label>
-                <input
-                  type="date"
-                  name="issue_date"
-                  value={formData.issue_date}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
+                <div className='flex flex-row justify-between'>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Issue Date
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIssueDateMode(mode => (mode === 'full' ? 'month-year' : 'full'))}
+                    className="px-3 h-8 w-13 py-1 text-sm bg-[#D6A767] mb-2 text-white rounded hover:bg-[#c49655] transition-colors"
+                  >
+                    {issueDateMode === 'full' ? 'Month & Year' : 'Full Date'}
+                  </button>
+                </div>
+                {/* 5. In the Issue Date field, replace the input with the toggle UI */}
+                <div className="flex items-center gap-2">
+                  {issueDateMode === 'full' ? (
+                    <input
+                      type="date"
+                      name="issue_date"
+                      value={formData.issue_date}
+                      onChange={handleInputChange}
+                      className="w-[550px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                      required
+                    />
+                  ) : (
+                    <>
+                      <select
+                        value={issueMonth}
+                        onChange={e => setIssueMonth(e.target.value)}
+                        className="px-2 py-2 border rounded w-[250px]"
+                      >
+                        <option value="">Month</option>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {new Date(0, i).toLocaleString('default', { month: 'long' })}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        value={issueYear}
+                        onChange={e => setIssueYear(e.target.value)}
+                        placeholder="Year"
+                        className="px-2 py-2 border rounded w-24 w-[250px]"
+                        min={1900}
+                        max={2100}
+                      />
+                    </>
+                  )}
+
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm mb-5 font-medium text-gray-700 mb-1">
                   Subject
                 </label>
                 <input
@@ -229,192 +306,365 @@ export const NoticePage: React.FC = () => {
             {/* Sender Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Sender Details</h3>
-              <div className="flex flex-row gap-4">
-                <input
-                  type="text"
-                  name="sender_name"
-                  value={formData.sender_name}
-                  onChange={handleInputChange}
-                  placeholder="Name"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type='text'
-                  name='senderFather_name'
-                  value={formData.senderFather_name}
-                  onChange={handleInputChange}
-                  placeholder='Father Name'
-                  className='flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent'
-                  required
-                />
-                <input
-                  type="text"
-                  name="sender_address"
-                  value={formData.sender_address}
-                  onChange={handleInputChange}
-                  placeholder="Address"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="email"
-                  name="sender_mail"
-                  value={formData.sender_mail}
-                  onChange={handleInputChange}
-                  placeholder="Email"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="tel"
-                  name="sender_phone"
-                  value={formData.sender_phone}
-                  onChange={handleInputChange}
-                  placeholder="Phone"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
+              <div className="flex flex-col sm:flex-row gap-4 py-4">
+                <div className="w-full sm:w-72">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <User className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="sender_name"
+                    value={formData.sender_name}
+                    onChange={handleInputChange}
+                    placeholder="Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-full sm:w-72">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <User className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Father Name
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="senderFather_name"
+                    value={formData.senderFather_name}
+                    onChange={handleInputChange}
+                    placeholder="Father Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-full sm:w-72">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <MapPinnedIcon className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="sender_address"
+                    value={formData.sender_address}
+                    onChange={handleInputChange}
+                    placeholder="Address"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-full sm:w-72">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Mail className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mail
+                    </label>
+                  </div>
+                  <input
+                    type="email"
+                    name="sender_mail"
+                    value={formData.sender_mail}
+                    onChange={handleInputChange}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-full sm:w-72">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Phone className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mobile No
+                    </label>
+                  </div>
+                  <input
+                    type="tel"
+                    name="sender_phone"
+                    value={formData.sender_phone}
+                    onChange={handleInputChange}
+                    placeholder="Phone"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             {/* Recipient Details */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Recipient Details</h3>
-              <div className="flex flex-row gap-4">
-                <input
-                  type="text"
-                  name="recipient_name"
-                  value={formData.recipient_name}
-                  onChange={handleInputChange}
-                  placeholder="Name"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type='text'
-                  name='recipientFather_name'
-                  value={formData.recipientFather_name}
-                  onChange={handleInputChange}
-                  placeholder='Father Name'
-                  className='flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent'
-                  required
-                />
-                <input
-                  type="text"
-                  name="recipient_address"
-                  value={formData.recipient_address}
-                  onChange={handleInputChange}
-                  placeholder="Address"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="email"
-                  name="recipient_mail"
-                  value={formData.recipient_mail}
-                  onChange={handleInputChange}
-                  placeholder="Email"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="tel"
-                  name="recipient_phone"
-                  value={formData.recipient_phone}
-                  onChange={handleInputChange}
-                  placeholder="Phone"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
+              <div className='flex flex-row  justify-between'>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Recipient Details</h3>
+                <button
+                  type="button"
+                  onClick={handleAddRecipient}
+                  className="px-3 h-8 w-13 mb-3 py-1 text-sm bg-[#D6A767] text-white rounded hover:bg-[#c49655] transition-colors"
+                >
+                  + Add Recipient
+                </button>
               </div>
-            </div>
+              {formData.recipients.map((recipient, idx) => (
+                <div key={idx} className="flex flex-row gap-4 mb-2 relative flex-nowrap py-8">
+                  <div className="w-72 sm:w-72">
+                    <div className='flex flex-row gap-1 text-center'>
+                      <User className='text-[#000000] h-5' />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Name
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      name="recipient_name"
+                      value={recipient.recipient_name}
+                      onChange={e => handleRecipientChange(idx, 'recipient_name', e.target.value)}
+                      placeholder="Name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div className="w-72 sm:w-72">
+                    <div className='flex flex-row gap-1 text-center'>
+                      <User className='text-[#000000] h-5' />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Father Name
+                      </label>
+                    </div>
+                    <input
+                      type='text'
+                      name='recipientFather_name'
+                      value={recipient.recipientFather_name}
+                      onChange={e => handleRecipientChange(idx, 'recipientFather_name', e.target.value)}
+                      placeholder='Father Name'
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent'
+                      required
+                    />
+                  </div>
+                  <div className="w-72 sm:w-72">
+                    <div className='flex flex-row gap-1 text-center'>
+                      <MapPinnedIcon className='text-[#000000] h-5' />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Address
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      name="recipient_address"
+                      value={recipient.recipient_address}
+                      onChange={e => handleRecipientChange(idx, 'recipient_address', e.target.value)}
+                      placeholder="Address"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div className="w-72 sm:w-72">
+                    <div className='flex flex-row gap-1 text-center'>
+                      <Mail className='text-[#000000] h-5' />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mail
+                      </label>
+                    </div>
+                    <input
+                      type="email"
+                      name="recipient_mail"
+                      value={recipient.recipient_mail}
+                      onChange={e => handleRecipientChange(idx, 'recipient_mail', e.target.value)}
+                      placeholder="Email"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div className="w-72 sm:w-72">
+                    <div className='flex flex-row gap-1 text-center'>
+                      <Phone className='text-[#000000] h-5' />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mobile No
+                      </label>
+                    </div>
+                    <input
+                      type="tel"
+                      name="recipient_phone"
+                      value={recipient.recipient_phone}
+                      onChange={e => handleRecipientChange(idx, 'recipient_phone', e.target.value)}
+                      placeholder="Phone"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  {formData.recipients.length > 1 && (
 
+                    <button
+                      type="button"
+                      className="absolute top-0 right-4 mb-4 flex items-center gap-1 text-red-600 hover:text-white hover:bg-red-500 border border-red-200 bg-red-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                      onClick={() => handleRemoveRecipient(idx)}
+                      aria-label="Remove incident"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+
+
+                  )}
+                </div>
+              ))}
+            </div>
             {/* Council Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Council Details</h3>
-              <div className="flex flex-row gap-4">
-                <input
-                  type="text"
-                  name="council_name"
-                  value={formData.council_name}
-                  onChange={handleInputChange}
-                  placeholder="Name"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="text"
-                  name="council_address"
-                  value={formData.council_address}
-                  onChange={handleInputChange}
-                  placeholder="Address"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="email"
-                  name="council_mail"
-                  value={formData.council_mail}
-                  onChange={handleInputChange}
-                  placeholder="Email"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
-                <input
-                  type="tel"
-                  name="council_phone"
-                  value={formData.council_phone}
-                  onChange={handleInputChange}
-                  placeholder="Phone"
-                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                  required
-                />
+              <div className="flex flex-row gap-4 flex-wrap py-4">
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <User className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="council_name"
+                    value={formData.council_name}
+                    onChange={handleInputChange}
+                    placeholder="Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-[351px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <MapPinnedIcon className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="council_address"
+                    value={formData.council_address}
+                    onChange={handleInputChange}
+                    placeholder="Address"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Mail className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mail
+                    </label>
+                  </div>
+                  <input
+                    type="email"
+                    name="council_mail"
+                    value={formData.council_mail}
+                    onChange={handleInputChange}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Phone className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mobile No
+                    </label>
+                  </div>
+                  <input
+                    type="tel"
+                    name="council_phone"
+                    value={formData.council_phone}
+                    onChange={handleInputChange}
+                    placeholder="Phone"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                    required
+                  />
+                </div>
               </div>
             </div>
+            {/* Contributor Details */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Contributor Details</h3>
+              <div className="flex flex-row gap-4 flex-wrap py-4">
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <User className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="contributor_name"
+                    value={formData.contributor_name}
+                    onChange={handleInputChange}
+                    placeholder="Name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  />
+                </div>
+                <div className="w-[351px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <MapPinnedIcon className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                  </div>
+                  <input
+                    type="text"
+                    name="contributor_address"
+                    value={formData.contributor_address}
+                    onChange={handleInputChange}
+                    placeholder="Address"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  />
+                </div>
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Mail className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mail
+                    </label>
+                  </div>
+                  <input
+                    type="email"
+                    name="contributor_mail"
+                    value={formData.contributor_mail}
+                    onChange={handleInputChange}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  />
+                </div>
+                <div className="w-[348px]">
+                  <div className='flex flex-row gap-1 text-center'>
+                    <Phone className='text-[#000000] h-5' />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mobile No
+                    </label>
+                  </div>
+                  <input
+                    type="tel"
+                    name="contributor_phone"
+                    value={formData.contributor_phone}
+                    onChange={handleInputChange}
+                    placeholder="Phone"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
 
             {/* Incidents */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-medium text-gray-900">Incidents</h3>
-                <button
-                  type="button"
-                  onClick={handleAddIncident}
-                  className="px-3 py-1 text-sm bg-[#D6A767] text-white rounded hover:bg-[#c49655] transition-colors"
-                >
-                  + Add Incident
-                </button>
               </div>
-              {formData.incidents.map((incident, index) => (
-                <div key={index} className="mb-4 relative">
-                  <div className="flex gap-4 mb-2">
-                    <input
-                      type="date"
-                      value={incident.date} 
-                      onChange={(e) => handleIncidentChange(index, 'date', e.target.value)}
-                      className="w-1/3 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                      required
-                    />
-                    {formData.incidents.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveIncident(index)}
-                        className="absolute right-0 top-0 text-red-500 hover:text-red-700"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    value={incident.description}
-                    onChange={(e) => handleIncidentChange(index, 'description', e.target.value)}
-                    placeholder={`Incident ${index + 1}`}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                    required
-                  />
-                </div>
-              ))}
+              <IncidentsSection
+                incidents={formData.incidents}
+                onChange={(updatedIncidents) => setFormData(prev => ({ ...prev, incidents: updatedIncidents }))}
+              />
             </div>
 
             {/* Conclusion */}

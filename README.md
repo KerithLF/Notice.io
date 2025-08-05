@@ -97,6 +97,25 @@ The frontend will be available at http://localhost:5173
    - Components are in `frontend/src/components`
    - API calls are in `frontend/src/api`
 
+## Email Configuration
+
+The application supports sending legal notices via email. To configure email:
+
+1. **Test your email configuration:**
+   ```bash
+   cd backend
+   python test_email.py
+   ```
+
+2. **For Gmail users:**
+   - Enable 2-Factor Authentication
+   - Generate an App Password (16 characters)
+   - Use the App Password instead of your regular password
+
+3. **For detailed setup instructions:**
+   - See `backend/EMAIL_SETUP.md` for comprehensive guide
+   - Includes troubleshooting for common email issues
+
 ## Troubleshooting
 
 1. If you get a "Module not found" error:
@@ -107,4 +126,9 @@ The frontend will be available at http://localhost:5173
 2. If the frontend can't connect to the backend:
    - Verify the backend is running on port 8000
    - Check CORS settings in `backend/main.py`
-   - Verify API URL in `frontend/src/api/notice.ts` 
+   - Verify API URL in `frontend/src/api/notice.ts`
+
+3. If email sending fails:
+   - Run `python test_email.py` to test your configuration
+   - Check `backend/EMAIL_SETUP.md` for detailed troubleshooting
+   - Ensure you're using the correct password (App Password for Gmail) 

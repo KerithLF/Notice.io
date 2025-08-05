@@ -33,11 +33,21 @@ def call_groq(prompt: str) -> str:
 import json
 
 def get_ipc_recommendations(subject: str, incidents: List[str]) -> List[Dict[str, str]]:
+
+    df = pd.read_csv("ipc_sect1ons.csv")
+    # Convert all columns to string to avoid dtype warnings
+    for col in df.columns:
+        df[col] = df[col].astype(str)
+    df.fillna('', inplace=True)
+    # Handle the correct column names from the CSV
+    # The CSV has: "COMPANY LAWS - ", "Acts", "Id.No", "Keywords", "Sections"
+    df['combined'] = df['Acts'] + ' ' + df['Keywords'] + ' ' + df['Sections']
+
     try:
         incidents_text = "\n".join(f"- {incident}" for incident in incidents)
 
         prompt = f"""
-You are an expert Indian legal assistant. Based on the case information below, return the 5 most relevant IPC sections in the following JSON format:
+You are an expert Indian legal assistant. Based on the case information below, return only the applicable IPC sections from the {df} in the following JSON format:
 
 [
   {{
@@ -153,3 +163,79 @@ def get_ipc_sections(query, top_k=5):
     D, I = index.search(query_vec, top_k)
     results = [chunks[i] for i in I[0]]
     return results
+
+
+
+
+
+
+
+
+# backend/recommender/semantic_model.py
+from sentence_transformers import SentenceTransformer
+
+class SemanticEmbedder:
+    def __init__(self, model_name="all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model_name)
+
+    def encode(self, texts):
+        return self.model.encode(texts, convert_to_tensor=True)
+
+
+
+# backend/recommender/utils.py
+import pandas as pd
+
+def load_ipc_data(file_path: str):
+    try:
+        df = pd.read_csv(file_path)
+        # Ensure required columns exist
+        required_columns = ['Sections', 'Acts', 'Keywords']
+        if not all(col in df.columns for col in required_columns):
+            raise ValueError(f"CSV file must contain columns: {required_columns}")
+        
+        # Clean the data
+        df = df.fillna('')
+        # Create combined text for better matching
+        df['combined'] = df['Acts'] + ' ' + df['Sections'] + ' ' + df['Keywords']
+        return df
+    except Exception as e:
+        print(f"Error loading IPC data: {e}")
+        raise
+
+
+
+# backend/recommender/retriever.py
+from sklearn.metrics.pairwise import cosine_similarity
+
+class IPCRetriever:
+    def __init__(self, embedder, df):
+        self.df = df
+        self.embedder = embedder
+        
+        # Clean and prepare texts for embedding
+        self.texts = df['combined'].fillna('').tolist()
+        # Remove empty texts and create valid indices mapping
+        self.valid_indices = [i for i, text in enumerate(self.texts) if text.strip()]
+        self.valid_texts = [self.texts[i] for i in self.valid_indices]
+        
+        if not self.valid_texts:
+            raise ValueError("No valid texts found in DataFrame")
+            
+        # Create embeddings for valid texts only
+        self.embeddings = embedder.encode(self.valid_texts)
+
+    def recommend(self, query: str, top_k: int = 5):
+        if not query or not query.strip():
+            return pd.DataFrame(columns=['Acts', 'Sections', 'Keywords'])
+            
+        # Encode query and get similarities
+        query_embedding = self.embedder.encode([query.strip()])
+        similarities = cosine_similarity(query_embedding, self.embeddings)[0]
+        
+        # Get top matches using valid indices
+        top_indices = similarities.argsort()[::-1][:top_k]
+        original_indices = [self.valid_indices[i] for i in top_indices]
+        
+        # Return matched rows from original dataframe
+        return self.df.iloc[original_indices][['Acts', 'Sections', 'Keywords']]

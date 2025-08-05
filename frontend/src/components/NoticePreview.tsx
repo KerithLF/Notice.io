@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Download, Share2, Mail, MessageSquare, Sparkles } from 'lucide-react';
+import { Edit, Download, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { NoticeData } from '../types/notice';
 
@@ -102,7 +102,6 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({ notice, onEdit, fo
             className="flex items-center space-x-2 bg-[#3C222F] text-white px-4 py-2 rounded-lg hover:bg-[#4A2A37] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mail className="h-4 w-4" />
-            <span>Email</span>
           </button>
 
           <button
@@ -111,7 +110,7 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({ notice, onEdit, fo
             className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MessageSquare className="h-4 w-4" />
-            <span>WhatsApp</span>
+            
           </button>
         </div>
       </div>

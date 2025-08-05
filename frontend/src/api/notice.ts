@@ -17,6 +17,20 @@ interface APIError {
   detail: string;
 }
 
+// Transform frontend data to match backend expectations
+const transformNoticeData = (data: NoticeData) => {
+  return {
+    ...data,
+    // Clean incidents to only include date and description
+    incidents: data.incidents.map(incident => ({
+      date: incident.date,
+      description: incident.description
+    })),
+    // Ensure sub_litigation_type is present
+    sub_litigation_type: data.sub_litigation_type || null
+  };
+};
+
 const handleResponse = async (response: Response) => {
   const data = await response.json();
   if (!response.ok) {
@@ -29,12 +43,15 @@ const handleResponse = async (response: Response) => {
 export const generateNotice = async (data: NoticeData): Promise<NoticeResponse> => {
   try {
     console.log('Sending notice generation request:', data);
+    const transformedData = transformNoticeData(data);
+    console.log('Transformed data:', transformedData);
+    
     const response = await fetch(`${API_BASE_URL}/generate-notice`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(transformedData),
     });
 
     const result = await handleResponse(response);
@@ -88,13 +105,31 @@ export const downloadPdf = async (noticeText: string) => {
     throw new Error('Failed to generate PDF');
   }
 
-  return response.json();
+  // Get the blob from the response
+  const blob = await response.blob();
+  
+  // Create a download link
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'Legal-Notice.pdf';
+  
+  // Trigger the download
+  document.body.appendChild(link);
+  link.click();
+  
+  // Clean up
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+  
+  return { success: true };
 };
 
 export const sendEmail = async (data: {
   sender_email: string;
   sender_password: string;
   recipient_email: string;
+  subject: string;
   notice_text: string;
 }) => {
   const response = await fetch(`${API_BASE_URL}/send-email`, {
@@ -106,7 +141,18 @@ export const sendEmail = async (data: {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to send email');
+    const errorData = await response.json().catch(() => ({}));
+    
+    // Handle authentication errors specifically
+    if (response.status === 401) {
+      const errorMessage = errorData.detail?.message || errorData.detail || 'Email authentication failed';
+      const helpMessage = errorData.detail?.help || '';
+      throw new Error(`${errorMessage}\n\n${helpMessage}`);
+    }
+    
+    // Handle other errors
+    const errorMessage = errorData.detail || 'Failed to send email';
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -128,7 +174,14 @@ export const shareWhatsapp = async (data: {
     throw new Error('Failed to share on WhatsApp');
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Open WhatsApp URL in new tab
+  if (result.url) {
+    window.open(result.url, '_blank');
+  }
+  
+  return result;
 };
 
 
