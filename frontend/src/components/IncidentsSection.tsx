@@ -9,8 +9,9 @@ interface Incident {
 }
 
 interface IncidentsSectionProps {
-  incidents: Incident[];
-  onChange: (incidents: Incident[]) => void;
+  incidents: any[];
+  onChange: (incidents: any[]) => void;
+  disabled?: boolean;
 }
 
 export const IncidentsSection: React.FC<IncidentsSectionProps> = ({ incidents, onChange }) => {

@@ -6,8 +6,9 @@ import tempfile
 import os
 import time
 from fastapi.responses import FileResponse
+from reportlab.lib.styles import str2alignment
 
-from backend.generator import generate_legal_notice, get_recommendations, save_to_pdf, send_notice_email, share_notice_whatsapp
+from backend.generator import generate_legal_notice, get_recommendations, save_to_pdf, send_notice_email, share_notice_whatsapp, generate_legal_notice_groq
 from backend.ipc_indexer import IPCRetriever, get_ipc_recommendations
 from backend.ipc_indexer import SemanticEmbedder, load_ipc_data
 
@@ -55,9 +56,16 @@ class IPCRecommendation(BaseModel):
     title: str
     description: str
 
+class WarningAlert(BaseModel):
+    type: str
+    title: str
+    message: str
+    severity: str2alignment
+
 class NoticeResponse(BaseModel):
     notice_text: str
     ipc_recommendations: List[IPCRecommendation]
+    warnings: Optional[List[WarningAlert]] = []
 
 class IPCRequestFlexible(BaseModel):
     subject: str
@@ -107,11 +115,48 @@ async def ipc_recommendations(request: IPCRequestFlexible):
         print(f"Error in ipc_recommendations endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+from backend.warning_validator import NoticeWarningValidator
 
 @router.post("/generate-notice", response_model=NoticeResponse)
 async def generate_notice(request: NoticeRequest):
     try:
         print("Received request for notice generation")
+
+        # Convert request to dict for warning validation
+        request_dict = {
+            'sender_name': request.sender_name,
+            'litigation_type': request.litigation_type,
+            'sub_litigation_type': request.sub_litigation_type,
+            'issue_date': request.issue_date,
+            'incidents': [{'date': i.date, 'description': i.description} for i in request.incidents],
+            'recipients': [{'name': r.recipient_name} for r in request.recipients]
+        }
+        
+        # Validate warnings based on litigation type
+        warnings = []
+        if request.litigation_type.lower() == 'cheque bounce' or 'cheque' in request.litigation_type.lower():
+            warnings = NoticeWarningValidator.validate_cheque_bounce_warnings(request_dict)
+        
+        # Check for duplicate cases
+        recipient = request.recipients[0] if request.recipients else None
+        if recipient and NoticeWarningValidator.check_duplicate_case(
+            request.sender_name, recipient.recipient_name
+        ):
+            warnings.append({
+                'type': 'duplicate_case',
+                'title': 'Duplicate Case Warning',
+                'message': f"Dear {request.sender_name}, there is already a pending case against {recipient.recipient_name}. Fresh legal action cannot be initiated against the same person.",
+                'severity': 'high'
+            })
+        
+        # Validate standing
+        if not NoticeWarningValidator.validate_party_standing({'name': request.sender_name}):
+            warnings.append({
+                'type': 'standing_issue',
+                'title': 'Legal Standing Warning',
+                'message': f"Dear {request.sender_name}, you may not be a relevant party to this suit. You must be a necessary party (agent, authorized representative, etc.) to initiate legal action.",
+                'severity': 'high'
+            })
 
         recipient = request.recipients[0] if request.recipients else Recipient(
             recipient_name="",

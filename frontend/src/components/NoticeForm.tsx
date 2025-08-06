@@ -8,30 +8,27 @@ interface NoticeFormProps {
 
 const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
   const [formData, setFormData] = useState<NoticeData>({
+    subject: '',
     litigation_type: '',
     tone: 'formal',
-    case_description: '',
     issue_date: '',
-    issue_month: '',
-    issue_year: '',
-    problem_date: '',
-    notice_period: '',
-    total_amount: '',
     sender_name: '',
+    senderFather_name: '',
     sender_address: '',
-    sender_title: '',
-    sender_company: '',
     sender_mail: '',
     sender_phone: '',
-    recipient_name: '',
-    recipient_address: '',
-    recipient_title: '',
-    recipient_company: '',
-    recipient_mail: '',
-    recipient_phone: '',
-    signature: '',
+    council_name: '',
+    council_address: '',
+    council_mail: '',
+    council_phone: '',
+    contributor_name: '',
+    contributor_address: '',
+    contributor_mail: '',
+    contributor_phone: '',
     custom_fields: {},
-    selected_template: ''
+    recipients: [],
+    incidents: [],
+    conclusion: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -107,19 +104,19 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
         </div>
 
         {/* Standard Fields */}
-        <div className="col-span-2">
+        {/* <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700">
             Case Description
           </label>
           <textarea
             name="case_description"
-            value={formData.case_description}
+            value={formData.case_description || ""}
             onChange={handleInputChange}
             rows={4}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
-        </div>
+        </div> */}
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -135,7 +132,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
           />
         </div>
 
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">
             Problem Date
           </label>
@@ -147,7 +144,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
-        </div>
+        </div> */}
 
         {/* Sender Information */}
         <div className="col-span-2">
@@ -171,22 +168,22 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
             />
-            <input
+            {/* <input
               type="text"
               name="sender_title"
               placeholder="Sender Title (optional)"
               value={formData.sender_title}
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-            <input
+            /> */}
+            {/* <input
               type="text"
               name="sender_company"
               placeholder="Sender Company (optional)"
               value={formData.sender_company}
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
+            /> */}
             <input
               type="email"
               name="sender_mail"
@@ -212,7 +209,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
         <div className="col-span-2">
           <h3 className="text-lg font-medium text-gray-900">Recipient Information</h3>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <input
+            {/* <input
               type="text"
               name="recipient_name"
               placeholder="Recipient Name"
@@ -220,8 +217,8 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
-            />
-            <input
+            /> */}
+            {/* <input
               type="text"
               name="recipient_address"
               placeholder="Recipient Address"
@@ -263,12 +260,131 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
               onChange={handleInputChange}
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               required
+            /> */}
+          </div>
+        </div>
+
+        {/* Council Information */}
+        <div className="col-span-2">
+          <h3 className="text-lg font-medium text-gray-900">Council Information</h3>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input
+              type="text"
+              name="council_name"
+              placeholder="Council Name"
+              value={formData.council_name}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="council_address"
+              placeholder="Council Address"
+              value={formData.council_address}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            {/* <input
+              type="text"
+              name="sender_title"
+              placeholder="Sender Title (optional)"
+              value={formData.sender_title}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            /> */}
+            {/* <input
+              type="text"
+              name="sender_company"
+              placeholder="Sender Company (optional)"
+              value={formData.sender_company}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            /> */}
+            <input
+              type="email"
+              name="council_mail"
+              placeholder="Council Email"
+              value={formData.council_mail}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="tel"
+              name="council_phone"
+              placeholder="Council Phone"
+              value={formData.council_phone}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
             />
           </div>
         </div>
 
+        {/* Contributor Information */}
+        <div className="col-span-2">
+          <h3 className="text-lg font-medium text-gray-900">Contributor Information</h3>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input
+              type="text"
+              name="contributor_name"
+              placeholder="Contributor Name"
+              value={formData.contributor_name}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="text"
+              name="contributor_address"
+              placeholder="Contributor Address"
+              value={formData.contributor_address}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            {/* <input
+              type="text"
+              name="sender_title"
+              placeholder="Sender Title (optional)"
+              value={formData.sender_title}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            /> */}
+            {/* <input
+              type="text"
+              name="sender_company"
+              placeholder="Sender Company (optional)"
+              value={formData.sender_company}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            /> */}
+            <input
+              type="email"
+              name="contributor_mail"
+              placeholder="Contributor Email"
+              value={formData.contributor_mail}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+            <input
+              type="tel"
+              name="contributor_phone"
+              placeholder="Contributor Phone"
+              value={formData.contributor_phone}
+              onChange={handleInputChange}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              required
+            />
+          </div>
+        </div>
+
+
         {/* Additional Fields */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">
             Notice Period
           </label>
@@ -281,9 +397,9 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             required
           />
-        </div>
+        </div> */}
 
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">
             Total Amount (if applicable)
           </label>
@@ -295,9 +411,9 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
             placeholder="e.g., ₹50,000"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
           />
-        </div>
+        </div> */}
 
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">
             Signature
           </label>
@@ -310,7 +426,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
             required
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Dynamic Fields based on Notice Type */}
       {formData.litigation_type && (
@@ -323,13 +439,14 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ onSubmit }) => {
         </div>
       )}
 
-      <div className="mt-6">
-        <button
-          type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Generate Notice
-        </button>
+        <div className="mt-6">
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Generate Notice
+          </button>
+        </div>
       </div>
     </form>
   );

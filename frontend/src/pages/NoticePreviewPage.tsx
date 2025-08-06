@@ -152,16 +152,36 @@ export const NoticePreviewPage: React.FC = () => {
 
         <div className="lg:col-span-1 xl:sticky top-[90px] h-fit border border-[#D6A767] rounded-md">
             <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Instructions</h2>
+              <h2 className="text-xl font-semibold mb-4">Cannot generate legal notice...</h2>
               <div className="space-y-4">
                 <ul className="list-disc list-inside text-sm text-gray-600 font-medium space-y-2">
                   <li className="flex items-start gap-4">
                     <span className="text-[#D6A767] font-bold">1.</span>
-                    <span className="text-sm font-medium">The notice should be in the format of a legal notice.</span>
+                    <span className="text-sm font-medium">When the date on which check is presented/ encashed is more than 3 months from the date on which it was drawn. </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#D6A767] font-bold">2.</span>
-                    <span className="text-sm font-medium">The notice should be in the format of a legal notice.</span>
+                    <span className="text-sm font-medium">When the cheque is encashed post the validity period. </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#D6A767] font-bold">3.</span>
+                    <span className="text-sm font-medium">When the information of dishonor is brought to the notice of Drawer after 30 days from the. </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#D6A767] font-bold">4.</span>
+                    <span className="text-sm font-medium">When the person tries to initiate a legal notice within 15 days from the date of receipt of notice of dishonor by the drawer. </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#D6A767] font-bold">5.</span>
+                    <span className="text-sm font-medium">When a prior legal notice has already been initiated and there is an already pending case against the same person before any court for the same reason.  </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#D6A767] font-bold">6.</span>
+                    <span className="text-sm font-medium">When the bank or the person had no reason to believe that there has been a material alteration of the cheque at the time of presentation, because such alteration is not apparent during the time of the presentation. Section 89. </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[#D6A767] font-bold">7.</span>
+                    <span className="text-sm font-medium">When the client is not a party to the suit (i.e. Drawer, Drawee, Payee, or Holder of the Cheque).  </span>
                   </li>
                 </ul>
               </div>

@@ -1,5 +1,6 @@
 import os
 import re
+from zipfile import Path
 import requests
 from sentence_transformers import util
 from dotenv import load_dotenv
@@ -509,12 +510,71 @@ def generate_legal_notice(litigation_type: str,sub_type: str,tone: str,subject: 
         }
         # Use the template
         template = TEMPLATES.get(sub_type) or TEMPLATES.get(litigation_type) or list(TEMPLATES.values())[0]
-        notice_legal_text = template.format(**data)
-        notice_legal_text = notice_legal_text.strip()
-        return clean_legal_notice(notice_legal_text)
+        notice_text = template.format(**data)
+        notice_text = notice_text.strip()
+        print("LLM response raw text:", notice_text)
+
+        return clean_legal_notice(notice_text)
     except Exception as e:
         print(f"Error in generate_legal_notice: {str(e)}")
         raise Exception(f"Failed to generate legal notice: {str(e)}")
+    
+
+# import pandas as pd
+
+# # Load once globally
+# ipc_df = pd.read_csv(r"C:\Users\DELL\Desktop\Notice_groq\ipc_sect1ons.csv").dropna()
+
+# def get_recommendations(litigation_type: str, sub_type: str, subject: str, incidents: list) -> str:
+#     # Step 1: Filter by subtype in the 'Keywords' column
+#     filtered = ipc_df[ipc_df['Keywords'].str.lower().str.contains(sub_type.lower(), na=False)]
+
+#     if filtered.empty:
+#         return f"No relevant legal sections found for subtype: {sub_type}"
+
+#     act_name = filtered['Acts'].iloc[0]
+
+#     # Step 2: Combine subject + incident descriptions
+#     incident_text = " ".join(incidents)  # list of incident descriptions
+#     query_text = f"{subject.strip()} {incident_text.strip()}"
+
+#     sections_text = "\n".join(
+#         f"- {row['Sections']} ({row['Acts']})" for _, row in filtered.iterrows()
+#     )
+
+#     prompt = f"""
+# You are a legal assistant AI.
+
+# Only consider sections from the following Act for recommendation:
+# 📘 {act_name}
+
+# Case Type: {litigation_type}
+# Sub-Type: {sub_type}
+
+# Subject:
+# {subject}
+
+# Incident Details:
+# {incident_text}
+
+# Available Sections:
+# {sections_text}
+
+# Instructions:
+# - Recommend only the sections from above that apply.
+# - For each section, explain why it is applicable.
+
+# Response Format:
+# - Section: ...
+# - Why Applicable: ...
+# """
+#     try:
+#         response = call_groq(prompt)
+#         return response.strip()
+#     except Exception as e:
+#         return f"Error while generating recommendations: {e}"
+
+
 
 
 
@@ -528,3 +588,69 @@ def get_recommendations(section: str, title: str, description: str):
         "title": title,
         "description": description
     }
+
+
+
+def generate_legal_notice_groq(litigation_type: str,sub_type: str,tone: str,subject: str,issue_date: str,sender_details: Dict[str, str],recipient_details: List[Dict[str, str]],council_details: Dict[str, str],contributor_details: Dict[str, str],incidents: List[Dict[str, str]],conclusion: str) -> str:
+    prompt = f"""
+You are a legal assistant AI. Below are multiple templates for different types of legal notices.
+
+TEMPLATES:
+ {chr(10).join(f"[{key} Template]:\n{value}" for key, value in TEMPLATES.items())}
+
+Case Details:
+Litigation Type: {litigation_type}
+Sub-Type: {sub_type}
+Tone: {tone}
+Issue Date: {issue_date}
+Subject: {subject}
+
+Sender Details:
+Name: {sender_details['name']}
+Father's Name: {sender_details.get('father_name', '')}
+Address: {sender_details['address']}
+Email: {sender_details['email']}
+Phone: {sender_details['phone']}
+
+Recipient Details:
+Name: {recipient_details['name']}
+Father's Name: {recipient_details.get('father_name', '')}
+Address: {recipient_details['address']}
+Email: {recipient_details['email']}
+Phone: {recipient_details['phone']}
+
+Council Details:
+Name: {council_details['name']}
+Email: {council_details['email']}
+Phone: {council_details['phone']}
+
+Contributor Details:
+Name: {contributor_details.get('name', '')}
+
+Incidents:
+{chr(10).join(f"  - On {incident.get('date', 'Unknown')}: {incident['description']}" for incident in incidents)}
+
+Conclusion:
+{conclusion}
+
+Your task is to:
+1. Automatically pick the best matching template and don't add a single word other than what is in the selected template and ther are also some logical statements like if else etc so generate accordingly.
+2. Replace the placeholders with appropriate values from the case details.
+3. Format it as a professional legal notice in {tone} tone.
+
+Respond only with the final notice, ready for PDF generation.
+"""
+
+    try:
+
+        response = call_groq(prompt)
+        print("LLM response:", response)
+        
+        if not response or not response.strip():
+            raise Exception("No valid text returned from LLM.")
+
+        return response.strip()
+
+    except Exception as e:
+        print(f"Error in generate_legal_notice_groq: {e}")
+        raise Exception(f"Notice generation failed: {e}")

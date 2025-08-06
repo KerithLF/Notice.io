@@ -86,55 +86,65 @@ Incidents:
         raise Exception(f"Failed to get IPC recommendations: {str(e)}")
 
 
-def extract_ipc_sections(pdf_path):
-    sections = []
-    current_section = ""
-    current_text = []
-    
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text()
+import os
+import pandas as pd
+import numpy as np
+import faiss
+from sentence_transformers import SentenceTransformer
+
+def extract_ipc_sections_from_csv(csv_path):
+    """Extract IPC sections from CSV file"""
+    try:
+        # Read CSV file
+        df = pd.read_csv(csv_path, encoding='utf-8')
+        
+        # Assuming CSV has columns like: 'section', 'description', 'details', etc.
+        # Adjust column names based on your CSV structure
+        text_chunks = []
+        
+        for _, row in df.iterrows():
+            # Combine relevant columns into text chunks
+            # Modify these column names based on your CSV structure
+            chunk_parts = []
+
+            if 'Acts' in df.columns and pd.notna(row['Acts']):
+                chunk_parts.append(f"Title: {row['Acts']}")
             
-            # Split into lines and process each line
-            lines = text.split('\n')
-            for line in lines:
-                # Skip empty lines and table of contents
-                if not line.strip() or "ARRANGEMENT OF SECTIONS" in line:
-                    continue
-                    
-                # Try to detect section headers (e.g., "Section 420: Cheating")
-                section_match = re.match(r'^(?:Section\s+)?(\d+[A-Z]?)\.\s+(.+)', line)
-                
-                if section_match:
-                    # If we have content from previous section, save it
-                    if current_section and current_text:
-                        full_section = current_section + "\n" + "\n".join(current_text)
-                        sections.append(full_section.strip())
-                        current_text = []
-                    
-                    # Start new section
-                    section_num, title = section_match.groups()
-                    current_section = f"Section {section_num}: {title}"
-                else:
-                    # Skip chapter headings and page numbers
-                    if not re.match(r'^(CHAPTER|SECTIONS|\d+)$', line.strip()):
-                        # Add line to current section description
-                        if current_section and line.strip():
-                            current_text.append(line.strip())
-    
-    # Add the last section
-    if current_section and current_text:
-        full_section = current_section + "\n" + "\n".join(current_text)
-        sections.append(full_section.strip())
-    
-    return sections
+            if 'Keywords' in df.columns and pd.notna(row['Keywords']):
+                chunk_parts.append(f"Keywords: {row['Keywords']}")
 
-# Get the absolute path to the PDF file
+            if 'Sections' in df.columns and pd.notna(row['Sections']):
+                chunk_parts.append(f"Sections: {row['Sections']}")
+            
+            # if 'details' in df.columns and pd.notna(row['details']):
+            #     chunk_parts.append(f"Details: {row['details']}")
+            
+            # if 'applicability' in df.columns and pd.notna(row['applicability']):
+            #     chunk_parts.append(f"Applicability: {row['applicability']}")
+            
+            # Join all parts into a single chunk
+            if chunk_parts:
+                chunk = " | ".join(chunk_parts)
+                text_chunks.append(chunk)
+        
+        return text_chunks
+    
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return []
+
+# Main code with CSV integration
 current_dir = os.path.dirname(os.path.abspath(__file__))
-pdf_path = os.path.join(os.path.dirname(current_dir), "ipc_sections.pdf")
+csv_path = os.path.join(os.path.dirname(current_dir), "ipc_sect1ons.csv")
 
-# 1. Extract sections
-text_chunks = extract_ipc_sections(pdf_path)
+# 1. Extract sections from CSV
+text_chunks = extract_ipc_sections_from_csv(csv_path)
+
+if not text_chunks:
+    print("No data extracted from CSV. Please check the file and column names.")
+    exit()
+
+print(f"Extracted {len(text_chunks)} sections from CSV")
 
 # 2. Embed
 model = SentenceTransformer('all-MiniLM-L6-v2')  # light-weight local embedding model
@@ -153,10 +163,17 @@ with open(chunks_path, "w", encoding="utf-8") as f:
     for c in text_chunks:
         f.write(c + "\n<|CHUNK|>\n")
 
+print(f"FAISS index saved to: {index_path}")
+print(f"Text chunks saved to: {chunks_path}")
+
 # For reuse in other modules
 index = faiss.read_index(index_path)
 chunks = open(chunks_path, encoding="utf-8").read().split("<|CHUNK|>\n")
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
+
+print("Setup complete. Ready for IPC section recommendations.")
+
+
 
 def get_ipc_sections(query, top_k=5):
     query_vec = embedder.encode([query], convert_to_numpy=True)
