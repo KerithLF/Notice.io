@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+<<<<<<< HEAD
+@layer base {
+  body {
+    @apply antialiased text-gray-900;
+  }
+}
+
+@layer components {
+  .header-dark {
+    @apply bg-[#3C222F] text-white;
+  }
+
+  .text-logo {
+    @apply text-[#D6A767];
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-[#D6A767] text-white rounded-md hover:bg-[#c49655] transition-colors;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 border border-[#D6A767] text-[#D6A767] rounded-md hover:bg-[#D6A767] hover:text-white transition-colors;
+  }
+
+  .input-style {
+    @apply px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D6A767] focus:border-[#D6A767];
+  }
+
+  .focus-gold {
+    @apply focus:ring-[#D6A767] focus:border-[#D6A767];
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D6A767;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c49655;
+=======
 :root {
   --header-bg: #3c222f;
   --text-color: #d6a767;
@@ -192,4 +242,5 @@ body {
 
 .typing-indicator {
   animation: typing 1.5s infinite;
+>>>>>>> 2135ecb251b0fb83cc65418f4d25d949ae5dec27
 }

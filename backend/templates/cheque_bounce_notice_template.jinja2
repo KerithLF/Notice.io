@@ -1,0 +1,30 @@
+From :
+Sri.{{ sender_details.name }},
+S/o.{{ sender_details.father_name }},
+Address: {{ sender_details.address }}
+
+To :
+Sri.{{ recipient_details.name }},
+S/o.{{ recipient_details.father_name }},
+Address: {{ recipient_details.address }}
+
+Dear Sir/Ma’am,
+
+{% if contributor_details %}
+I {{ contributor_details.name }} on behalf of the {{ council_details.name }}, under the instructions of Sri.{{ sender_details.name }}, and duly authorized to give you this notice hereby notify you –
+{% else %}
+I, Sri.{{ sender_details.name }}, hereby issue this notice to bring to your attention the following –
+{% endif %}
+
+{% for incident in incidents %}
+{{ loop.index }}. That on {{ incident.date }} {{ incident.description }}
+{% endfor %}
+
+{{ para3_num }}. That you had issued the said cheque despite your knowledge that you had no funds in your account. You have cheated the said firm and it seems that you do not want to pay the amount of Rs.{{ amount }} to the payee. 
+
+{{ para4_num }}. Through this notice you are called upon to pay the aforesaid payee an amount of Rs.{{ amount }} within 15 days of the receipt of this notice, failing which the aforementioned party shall be compelled to initiate recovery proceedings against you in the court of law and shall also initiate proceedings under Section 138 of the Negotiable Instruments Act, (1881), and then you shall also be liable for the cost of the proceedings.
+
+Date : {{ issue_date }}
+Place : {{ sender_details.address }}
+
+{{ right_faithfully }}

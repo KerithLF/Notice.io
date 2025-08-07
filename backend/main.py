@@ -1,3 +1,32 @@
+<<<<<<< HEAD
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.api import router
+
+app = FastAPI()
+
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include the API router
+app.include_router(router, prefix="/api")
+
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+=======
 import gradio as gr
 from backend.generator import create_notice, generate_pdf_from_text, save_to_pdf, send_notice_email, share_notice_whatsapp
 from backend.parsing import extract_text_from_any
@@ -117,3 +146,4 @@ with gr.Blocks() as demo:
 
 
 demo.launch()
+>>>>>>> 2135ecb251b0fb83cc65418f4d25d949ae5dec27
