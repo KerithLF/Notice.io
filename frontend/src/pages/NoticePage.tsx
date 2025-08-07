@@ -155,6 +155,8 @@ export const NoticePage: React.FC = () => {
     litigation_type: '',
     tone: 'formal',
     issue_date: '',
+    check_issue_date: '',
+    check_withdraw_date: '',
     subject: '',
     sender_name: '',
     sender_address: '',
@@ -361,6 +363,39 @@ export const NoticePage: React.FC = () => {
     setIsGenerating(false);
   };
 
+
+  //check validation
+
+  const isWithdrawDateValid = () => {
+    const { check_issue_date, check_withdraw_date } = formData;
+    if (!check_issue_date || !check_withdraw_date) return true;
+    const issueDate = new Date(check_issue_date);
+    const withdrawDate = new Date(check_withdraw_date);
+    // Add 3 months to issueDate
+    const threeMonthsLater = new Date(issueDate);
+    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+    return withdrawDate <= threeMonthsLater;
+  };
+
+  useEffect(() => {
+    if (
+      formData.sub_litigation_type === "Cheque Bounce" &&
+      formData.check_issue_date &&
+      formData.check_withdraw_date
+    ) {
+      const issueDate = new Date(formData.check_issue_date);
+      const withdrawDate = new Date(formData.check_withdraw_date);
+      const threeMonthsLater = new Date(issueDate);
+      threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+      if (withdrawDate > threeMonthsLater) {
+        testWarnings();
+      } else {
+        console.log("Withdraw date is valid");
+      }
+    }
+  }, [formData.check_issue_date, formData.check_withdraw_date, formData.sub_litigation_type]);
+  
+
   // Test warning function (for debugging)
   const testWarnings = () => {
     const mockWarnings: WarningAlert[] = [
@@ -370,12 +405,7 @@ export const NoticePage: React.FC = () => {
         message: 'Dear Test User, from the information provided, there is a delay in encashing the cheque. Legal action can only be initiated when the cheque is encashed within 3 months from issue date or validity period, whichever is lesser.',
         severity: 'high'
       },
-      {
-        type: 'dishonor_delay',
-        title: 'Notice Timing Warning',
-        message: 'Dear Test User, there is a delay in informing the drawer about cheque dishonor. Notice must be issued within 30 days.',
-        severity: 'medium'
-      }
+      
     ];
 
     setWarnings(mockWarnings);
@@ -393,7 +423,7 @@ export const NoticePage: React.FC = () => {
         <div className="bg-white rounded-lg p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Debug Test Button - Remove in production */}
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            {/* <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800 mb-2">
                 🧪 <strong>Debug Tools:</strong>
               </p>
@@ -404,10 +434,11 @@ export const NoticePage: React.FC = () => {
               >
                 Test Warning Model
               </button>
-            </div>
+            </div> */}
 
             {/* Basic Details */}
             <div className="grid grid-cols-2 gap-4 py-2">
+              {/* Left Column - Litigation Type and Sub-Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Litigation Type
@@ -418,7 +449,6 @@ export const NoticePage: React.FC = () => {
                   onChange={handleLitigationTypeChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
-                // disabled={isGenerating}
                 >
                   <option value="">Select litigation type</option>
                   <option value="Employment Law">Employment Law</option>
@@ -446,7 +476,6 @@ export const NoticePage: React.FC = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                       required
-                    // disabled={isGenerating}
                     >
                       <option value="">Select sub-type</option>
                       {subLitigationTypes.map((type) => (
@@ -456,6 +485,8 @@ export const NoticePage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Right Column - Tone and Date Inputs (conditional) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tone
@@ -465,7 +496,6 @@ export const NoticePage: React.FC = () => {
                   value={formData.tone}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                // disabled={isGenerating}
                 >
                   <option value="formal">Formal</option>
                   <option value="casual">Casual</option>
@@ -475,39 +505,42 @@ export const NoticePage: React.FC = () => {
                   <option value="Negotiatory">Negotiatory</option>
                   <option value="stern">Stern</option>
                 </select>
-              </div>
-              {
-                formData.sub_litigation_type === "Cheque Bounce" && (
-                  <>
-                    <div className='flex flex-row justify-between w-xl'>
-                      <div className='flex flex-col gap-1'>
-                        <label>Check_issue_date</label>
-                        <input
-                          type="date"
-                          name="Check_issue_date"
-                          value={formData.check_issue_date}
-                          onChange={handleInputChange}
-                          className="w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                          required
-                        />
-                      </div>
 
-                      <div className='flex flex-col gap-1'>
-                        <label>Check_issue_date</label>
-                        <input
-                          type="date"
-                          name="Check_withdraw_date"
-                          value={formData.check_withdraw_date}
-                          onChange={handleInputChange}
-                          className="w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
-                          required
-                        />
-                      </div>
+                {/* Conditional Date Inputs under Tone */}
+                {formData.sub_litigation_type === "Cheque Bounce" && (
+                  <div className="mt-2 grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Check Issue Date
+                      </label>
+                      <input
+                        type="date"
+                        name="check_issue_date"
+                        value={formData.check_issue_date || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                        required
+                      />
                     </div>
-                  </>
-                )
-              }
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Check Withdraw Date
+                      </label>
+                      <input
+                        type="date"
+                        name="check_withdraw_date"
+                        value={formData.check_withdraw_date || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
 
             {/* Issue Date & Subject */}
             <div className="grid grid-cols-2 gap-4 py-4">
