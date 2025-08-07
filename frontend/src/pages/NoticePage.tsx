@@ -525,7 +525,7 @@ export const NoticePage: React.FC = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Check Withdraw Date
+                        Check Date of Bounce
                       </label>
                       <input
                         type="date"
