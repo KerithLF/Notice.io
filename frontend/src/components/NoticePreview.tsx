@@ -1,9 +1,9 @@
 import React from 'react';
-import { Edit, Download, Mail, MessageSquare, Sparkles, AlertTriangle } from 'lucide-react';
+import { Edit, Download, Mail, MessageSquare, Sparkles, AlertTriangle, Loader } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { NoticeData } from '../types/notice';
 
-// Add the warning types
+// Define the interfaces at the top
 interface WarningAlert {
   type: 'encashing_delay' | 'dishonor_delay' | 'early_notice' | 'duplicate_case' | 'standing_issue';
   title: string;
@@ -11,13 +11,127 @@ interface WarningAlert {
   severity: 'high' | 'medium' | 'low';
 }
 
+interface IPCRecommendation {
+  section: string;
+  act: string;
+  title: string;
+  description: string;
+  applicability: string;
+}
+
 interface NoticePreviewProps {
   notice: string;
   onEdit: () => void;
   formData: NoticeData;
-  warnings?: WarningAlert[]; // Add warnings prop
-  onRegenerate?: () => void; // Add regenerate function
+  warnings?: WarningAlert[];
+  ipcRecommendations?: IPCRecommendation[]; // Add this prop
+  onRegenerate?: () => void;
 }
+
+// IPC Recommendations Display Component
+const IPCRecommendationsDisplay: React.FC<{
+  recommendations: IPCRecommendation[];
+  isLoading?: boolean;
+}> = ({ recommendations, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+          <span className="mr-2">📖</span>
+          Applicable Legal Sections
+        </h3>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!recommendations || recommendations.length === 0) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+          <span className="mr-2">📖</span>
+          Applicable Legal Sections
+        </h3>
+        <div className="text-center py-8">
+          <div className="text-gray-400 text-6xl mb-4">⚖️</div>
+          <p className="text-gray-500">
+            No specific legal sections found for this case type.
+          </p>
+          <p className="text-sm text-gray-400 mt-2">
+            Please check your litigation type and incident descriptions.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm">
+      <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center justify-between">
+        <span className="flex items-center">
+          <span className="mr-2">📖</span>
+          Applicable Legal Sections
+        </span>
+        <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+          {recommendations.length} found
+        </span>
+      </h3>
+      
+      <div className="space-y-6">
+        {recommendations.map((rec, index) => (
+          <div key={index} className="border-l-4 border-blue-500 pl-4 py-3 bg-blue-50 rounded-r-lg hover:bg-blue-100 transition-colors">
+            <div className="mb-3">
+              <h4 className="font-bold text-blue-900 text-lg flex items-center">
+                <span className="bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm font-medium mr-2">
+                  {rec.section}
+                </span>
+              </h4>
+              <p className="text-sm text-blue-700 font-medium mt-1">
+                📜 {rec.act}
+              </p>
+            </div>
+            
+            <div className="mb-3">
+              <p className="text-gray-800 font-medium text-sm">
+                <span className="text-blue-600 font-semibold">Subject:</span> {rec.title}
+              </p>
+            </div>
+            
+            <div className="mb-3">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                <span className="font-semibold text-blue-600">Why Applicable:</span> {rec.description}
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                {rec.applicability}
+              </div>
+              <div className="text-xs text-gray-500">
+                Recommendation #{index + 1}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-6 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r">
+        <p className="text-sm text-yellow-800">
+          <span className="font-semibold">💡 Note:</span> These recommendations are AI-generated based on your case details. 
+          Please consult with your legal counsel for final verification.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // Warning Modal Component
 const WarningModal: React.FC<{
@@ -25,7 +139,8 @@ const WarningModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onProceed: () => void;
-}> = ({ warnings, isOpen, onClose, onProceed }) => {
+  isLoading?: boolean;
+}> = ({ warnings, isOpen, onClose, onProceed, isLoading = false }) => {
   if (!isOpen || !warnings.length) return null;
 
   const getSeverityColor = (severity: string): string => {
@@ -61,6 +176,7 @@ const WarningModal: React.FC<{
             onClick={onClose} 
             className="text-gray-400 hover:text-gray-600 text-xl font-bold"
             aria-label="Close"
+            disabled={isLoading}
           >
             ✕
           </button>
@@ -98,15 +214,18 @@ const WarningModal: React.FC<{
           <div className="flex justify-end space-x-3">
             <button 
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              disabled={isLoading}
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
             >
               Review & Edit Details
             </button>
             <button 
               onClick={onProceed}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              disabled={isLoading}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center space-x-2"
             >
-              Proceed Despite Warnings
+              {isLoading && <Loader className="h-4 w-4 animate-spin" />}
+              <span>{isLoading ? 'Processing...' : 'Proceed Despite Warnings'}</span>
             </button>
           </div>
         </div>
@@ -120,6 +239,7 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({
   onEdit, 
   formData, 
   warnings = [],
+  ipcRecommendations = [], // Add default value
   onRegenerate 
 }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -136,11 +256,11 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({
     const doc = new jsPDF();
     const lines = doc.splitTextToSize(notice, 180);
     doc.text(lines, 20, 20);
-    doc.save(`legal-notice-${formData.selected_type}.pdf`);
+    doc.save(`legal-notice-${formData.litigation_type || 'document'}.pdf`);
   };
 
   const shareViaEmail = () => {
-    const subject = encodeURIComponent(`Legal Notice: ${formData.selected_type}`);
+    const subject = encodeURIComponent(`Legal Notice: ${formData.litigation_type || 'Legal Document'}`);
     const body = encodeURIComponent(notice);
     window.open(`mailto:?subject=${subject}&body=${body}`);
   };
@@ -175,6 +295,7 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Notice Display Section */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
@@ -258,12 +379,21 @@ export const NoticePreview: React.FC<NoticePreviewProps> = ({
         </div>
       </div>
 
+      {/* IPC Recommendations Section */}
+      {ipcRecommendations && ipcRecommendations.length > 0 && (
+        <IPCRecommendationsDisplay 
+          recommendations={ipcRecommendations} 
+          isLoading={false}
+        />
+      )}
+
       {/* Warning Modal */}
       <WarningModal
         warnings={warnings}
         isOpen={showWarningModal}
         onClose={handleWarningClose}
         onProceed={handleWarningProceed}
+        isLoading={false}
       />
     </div>
   );

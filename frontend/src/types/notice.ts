@@ -17,6 +17,8 @@ export interface Recipient {
 export interface NoticeData {
   litigation_type: string;
   sub_litigation_type?: string;
+  check_withdraw_date?: string;
+  check_issue_date?: string;
   tone: string;
   subject: string;
   issue_date: string;
@@ -43,4 +45,26 @@ export interface NoticeData {
 export interface Field {
   name: string;
   label: string;
+}
+
+
+export interface IPCRecommendation {
+  section: string;
+  act: string;
+  title: string;
+  description: string;
+  applicability: string;
+}
+
+export interface WarningAlert {
+  type: 'encashing_delay' | 'dishonor_delay' | 'early_notice' | 'duplicate_case' | 'standing_issue';
+  title: string;
+  message: string;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface NoticeResponse {
+  notice_text: string;
+  ipc_recommendations: IPCRecommendation[];
+  warnings?: WarningAlert[];
 }

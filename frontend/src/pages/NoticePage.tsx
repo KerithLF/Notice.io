@@ -2,15 +2,35 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NoticeData } from '../types/notice';
 import { IncidentsSection } from '../components/IncidentsSection';
-import { MapPinnedIcon } from 'lucide-react';
+import { MapPinnedIcon, AlertTriangle, Loader } from 'lucide-react';
 import {
   User,
   Phone,
   Mail,
 } from "lucide-react";
-// import { useLocation } from 'react-router-dom';
+import { generateNotice } from '../api/notice';
 
+// Add missing interfaces
+interface WarningAlert {
+  type: 'encashing_delay' | 'dishonor_delay' | 'early_notice' | 'duplicate_case' | 'standing_issue';
+  title: string;
+  message: string;
+  severity: 'high' | 'medium' | 'low';
+}
 
+interface IPCRecommendation {
+  section: string;
+  act: string;
+  title: string;
+  description: string;
+  applicability: string;
+}
+
+interface NoticeResponse {
+  notice_text: string;
+  ipc_recommendations: IPCRecommendation[];
+  warnings?: WarningAlert[];
+}
 
 interface Recipient {
   recipient_name: string;
@@ -20,9 +40,117 @@ interface Recipient {
   recipient_phone: string;
 }
 
+// Warning Modal Component
+const WarningModal: React.FC<{
+  warnings: WarningAlert[];
+  isOpen: boolean;
+  onClose: () => void;
+  onProceed: () => void;
+  isLoading?: boolean;
+}> = ({ warnings, isOpen, onClose, onProceed, isLoading = false }) => {
+  if (!isOpen || !warnings.length) return null;
+
+  const getSeverityColor = (severity: string): string => {
+    switch (severity) {
+      case 'high':
+        return 'border-red-500 bg-red-50 text-red-800';
+      case 'medium':
+        return 'border-orange-500 bg-orange-50 text-orange-800';
+      default:
+        return 'border-yellow-500 bg-yellow-50 text-yellow-800';
+    }
+  };
+
+  const getSeverityIcon = (severity: string): string => {
+    switch (severity) {
+      case 'high': return '🚨';
+      case 'medium': return '⚠️';
+      default: return '⚡';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <h3 className="text-xl font-semibold text-red-600">
+              Legal Notice Warnings
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+            aria-label="Close"
+            disabled={isLoading}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-4 mb-6">
+          {warnings.map((warning: WarningAlert, index: number) => (
+            <div
+              key={`${warning.type}-${index}`}
+              className={`border-l-4 p-4 rounded-r-lg ${getSeverityColor(warning.severity)}`}
+            >
+              <div className="flex items-start space-x-3">
+                <span className="text-lg flex-shrink-0 mt-1">
+                  {getSeverityIcon(warning.severity)}
+                </span>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-2 text-base">
+                    {warning.title}
+                  </h4>
+                  <p className="text-sm leading-relaxed">
+                    {warning.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t pt-4">
+          <p className="text-sm text-gray-600 mb-4">
+            <strong>Important:</strong> These warnings indicate potential legal issues.
+            Please review your information carefully or consult with your lawyer before proceeding.
+          </p>
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+            >
+              Review & Edit Details
+            </button>
+            <button
+              onClick={onProceed}
+              disabled={isLoading}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center space-x-2"
+            >
+              {isLoading && <Loader className="h-4 w-4 animate-spin" />}
+              <span>{isLoading ? 'Processing...' : 'Proceed Despite Warnings'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const NoticePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Add warning-related state
+  const [warnings, setWarnings] = useState<WarningAlert[]>([]);
+  const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [pendingNavigation, setPendingNavigation] = useState<NoticeResponse | null>(null);
+
   const [formData, setFormData] = useState<NoticeData>({
     litigation_type: '',
     tone: 'formal',
@@ -65,7 +193,7 @@ export const NoticePage: React.FC = () => {
     if (editFormData) setFormData(editFormData)
   }, [editFormData])
 
-  console.log(formData)
+
 
   const [subLitigationTypes, setSubLitigationTypes] = useState<string[]>([]);
 
@@ -95,19 +223,6 @@ export const NoticePage: React.FC = () => {
     setSubLitigationTypes(litigationTypeOptions[value] || []);
   };
 
-  // const { state } = useLocation();
-  // const [formData, setFormData] = useState({
-  //   litigationType: state?.litigationType || "",
-  //   tone: state?.tone || "",
-  //   issueDate: state?.issueDate || "",
-  //   problemDate: state?.problemDate || "",
-  //   caseDescription: state?.caseDescription || "",
-  //   noticePeriod: state?.noticePeriod || "",
-  //   sender: state?.sender || {},
-  //   recipient: state?.recipient || {},
-  //   selectedTemplate: state?.selectedTemplate || "",
-  // });
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -116,8 +231,6 @@ export const NoticePage: React.FC = () => {
     }));
   };
 
-  // Remove handleAddRecipient (old version)
-  // Add new handlers for recipients:
   const handleRecipientChange = (index: number, field: keyof Recipient, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -150,22 +263,149 @@ export const NoticePage: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Navigate to the notice preview page with form data
-    navigate('/notice-preview', { state: { formData } });
+  // API call function
+  const generateNoticeWithWarnings = async (data: NoticeData): Promise<NoticeResponse> => {
+    // Prepare the final issue date
+    let finalIssueDate = data.issue_date;
+    if (issueDateMode === 'month-year' && issueMonth && issueYear) {
+      finalIssueDate = `${issueYear}-${issueMonth}-01`;
+    }
+
+    const requestData = {
+      ...data,
+      issue_date: finalIssueDate,
+      litigation_type: data.litigation_type,
+      sub_litigation_type: data.sub_litigation_type || '',
+    };
+
+    console.log('🔍 Sending request data:', requestData);
+
+    const response = await generateNotice(requestData);
+
+    console.log('🔍 Response:', response);
+
+
+    // if (!response.ok) {
+    //   const errorText = await response.text();
+    //   throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    // }
+
+    return response as NoticeResponse;
   };
 
-  console.log(formData)
+  // Navigate to preview with result
+  const navigateToPreview = (result: NoticeResponse) => {
+    setIsGenerating(false);
+    navigate('/notice-preview', {
+      state: {
+        formData,
+        noticeText: result.notice_text,
+        ipcRecommendations: result.ipc_recommendations,
+        warnings: result.warnings || []
+      }
+    });
+  };
+
+  // Updated form submission handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGenerating(true);
+
+    try {
+      console.log('🚀 Starting notice generation...');
+
+      // Call API to generate notice and check for warnings
+      const result = await generateNoticeWithWarnings(formData);
+
+      console.log('📄 API Response:', result);
+      console.log('⚠️ Warnings received:', result.warnings);
+
+      // Check for warnings
+      if (result.warnings && result.warnings.length > 0) {
+        console.log('🚨 Showing warning modal');
+        setWarnings(result.warnings);
+        setShowWarningModal(true);
+        setPendingNavigation(result);
+        setIsGenerating(false);
+        return;
+      }
+
+      // No warnings, navigate directly to preview
+      console.log('✅ No warnings, proceeding to preview');
+      navigateToPreview(result);
+
+    } catch (error) {
+      console.error('❌ Error generating notice:', error);
+      setIsGenerating(false);
+      // Show user-friendly error message
+      alert(`Error generating notice: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    }
+  };
+
+  // Warning modal handlers
+  const handleProceedWithWarnings = async () => {
+    if (pendingNavigation) {
+      console.log('✅ Proceeding despite warnings');
+      navigateToPreview(pendingNavigation);
+      setShowWarningModal(false);
+      setPendingNavigation(null);
+      setWarnings([]);
+    }
+  };
+
+  const handleCloseWarningModal = () => {
+    console.log('📝 User chose to review details');
+    setShowWarningModal(false);
+    setPendingNavigation(null);
+    setWarnings([]);
+    setIsGenerating(false);
+  };
+
+  // Test warning function (for debugging)
+  const testWarnings = () => {
+    const mockWarnings: WarningAlert[] = [
+      {
+        type: 'encashing_delay',
+        title: 'Delay in Encashing Warning',
+        message: 'Dear Test User, from the information provided, there is a delay in encashing the cheque. Legal action can only be initiated when the cheque is encashed within 3 months from issue date or validity period, whichever is lesser.',
+        severity: 'high'
+      },
+      {
+        type: 'dishonor_delay',
+        title: 'Notice Timing Warning',
+        message: 'Dear Test User, there is a delay in informing the drawer about cheque dishonor. Notice must be issued within 30 days.',
+        severity: 'medium'
+      }
+    ];
+
+    setWarnings(mockWarnings);
+    setShowWarningModal(true);
+  };
+
+  console.log('🔄 Current form data:', formData);
 
   return (
     <div className="min-h-screen bg-[#FAF6F3] p-6">
       <div className="max-w-[80%] mx-auto">
-        <h1 className="text-3xl text-center font-bold text-[#1A1A1A] mb-2">Generate Legal Notice </h1>
+        <h1 className="text-3xl text-center font-bold text-[#1A1A1A] mb-2">Generate Legal Notice</h1>
         <p className="text-gray-600 mb-8 text-center">Fill in the details to generate a professional legal notice</p>
 
         <div className="bg-white rounded-lg p-6 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Debug Test Button - Remove in production */}
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800 mb-2">
+                🧪 <strong>Debug Tools:</strong>
+              </p>
+              <button
+                type="button"
+                onClick={testWarnings}
+                className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
+              >
+                Test Warning Model
+              </button>
+            </div>
+
             {/* Basic Details */}
             <div className="grid grid-cols-2 gap-4 py-2">
               <div>
@@ -178,6 +418,7 @@ export const NoticePage: React.FC = () => {
                   onChange={handleLitigationTypeChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
+                // disabled={isGenerating}
                 >
                   <option value="">Select litigation type</option>
                   <option value="Employment Law">Employment Law</option>
@@ -192,6 +433,7 @@ export const NoticePage: React.FC = () => {
                   <option value="Environmental">Environmental Law</option>
                   <option value="Public Interest">Public Interest Litigation</option>
                 </select>
+
                 {/* Sub-litigation type dropdown */}
                 {subLitigationTypes.length > 0 && (
                   <div className="mt-2">
@@ -200,10 +442,11 @@ export const NoticePage: React.FC = () => {
                     </label>
                     <select
                       name="sub_litigation_type"
-                      value={formData.sub_litigation_type}
+                      value={formData.sub_litigation_type || ''}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     >
                       <option value="">Select sub-type</option>
                       {subLitigationTypes.map((type) => (
@@ -222,16 +465,48 @@ export const NoticePage: React.FC = () => {
                   value={formData.tone}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                // disabled={isGenerating}
                 >
                   <option value="formal">Formal</option>
                   <option value="casual">Casual</option>
                   <option value="Assertive">Assertive</option>
                   <option value="Empathetic">Empathetic</option>
                   <option value="Aggressive">Aggressive</option>
-                  <option value="Negotiatory">Formal</option>
+                  <option value="Negotiatory">Negotiatory</option>
                   <option value="stern">Stern</option>
                 </select>
               </div>
+              {
+                formData.sub_litigation_type === "Cheque Bounce" && (
+                  <>
+                    <div className='flex flex-row justify-between w-xl'>
+                      <div className='flex flex-col gap-1'>
+                        <label>Check_issue_date</label>
+                        <input
+                          type="date"
+                          name="Check_issue_date"
+                          value={formData.check_issue_date}
+                          onChange={handleInputChange}
+                          className="w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                          required
+                        />
+                      </div>
+
+                      <div className='flex flex-col gap-1'>
+                        <label>Check_issue_date</label>
+                        <input
+                          type="date"
+                          name="Check_withdraw_date"
+                          value={formData.check_withdraw_date}
+                          onChange={handleInputChange}
+                          className="w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )
+              }
             </div>
 
             {/* Issue Date & Subject */}
@@ -245,11 +520,11 @@ export const NoticePage: React.FC = () => {
                     type="button"
                     onClick={() => setIssueDateMode(mode => (mode === 'full' ? 'month-year' : 'full'))}
                     className="px-3 h-8 w-13 py-1 text-sm bg-[#D6A767] mb-2 text-white rounded hover:bg-[#c49655] transition-colors"
+                  // disabled={isGenerating}
                   >
                     {issueDateMode === 'full' ? 'Month & Year' : 'Full Date'}
                   </button>
                 </div>
-                {/* 5. In the Issue Date field, replace the input with the toggle UI */}
                 <div className="flex items-center gap-2">
                   {issueDateMode === 'full' ? (
                     <input
@@ -259,6 +534,7 @@ export const NoticePage: React.FC = () => {
                       onChange={handleInputChange}
                       className="w-[550px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     />
                   ) : (
                     <>
@@ -266,6 +542,8 @@ export const NoticePage: React.FC = () => {
                         value={issueMonth}
                         onChange={e => setIssueMonth(e.target.value)}
                         className="px-2 py-2 border rounded w-[250px]"
+                        // disabled={isGenerating}
+                        required
                       >
                         <option value="">Month</option>
                         {Array.from({ length: 12 }, (_, i) => (
@@ -279,13 +557,14 @@ export const NoticePage: React.FC = () => {
                         value={issueYear}
                         onChange={e => setIssueYear(e.target.value)}
                         placeholder="Year"
-                        className="px-2 py-2 border rounded w-24 w-[250px]"
+                        className="px-2 py-2 border rounded w-[250px]"
                         min={1900}
                         max={2100}
+                        // disabled={isGenerating}
+                        required
                       />
                     </>
                   )}
-
                 </div>
               </div>
               <div>
@@ -299,6 +578,7 @@ export const NoticePage: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                   required
+                // disabled={isGenerating}
                 />
               </div>
             </div>
@@ -322,6 +602,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-full sm:w-72">
@@ -339,6 +620,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Father Name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-full sm:w-72">
@@ -356,6 +638,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Address"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-full sm:w-72">
@@ -373,6 +656,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Email"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-full sm:w-72">
@@ -390,6 +674,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Phone"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
               </div>
@@ -397,12 +682,13 @@ export const NoticePage: React.FC = () => {
 
             {/* Recipient Details */}
             <div>
-              <div className='flex flex-row  justify-between'>
+              <div className='flex flex-row justify-between'>
                 <h3 className="text-lg font-medium text-gray-900 mb-3">Recipient Details</h3>
                 <button
                   type="button"
                   onClick={handleAddRecipient}
-                  className="px-3 h-8 w-13 mb-3 py-1 text-sm bg-[#D6A767] text-white rounded hover:bg-[#c49655] transition-colors"
+                  className="px-3 h-8 w-13 mb-3 py-1 text-sm bg-[#D6A767] text-white rounded hover:bg-[#c49655] transition-colors disabled:opacity-50"
+                // disabled={isGenerating}
                 >
                   + Add Recipient
                 </button>
@@ -424,6 +710,7 @@ export const NoticePage: React.FC = () => {
                       placeholder="Name"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     />
                   </div>
                   <div className="w-72 sm:w-72">
@@ -441,6 +728,7 @@ export const NoticePage: React.FC = () => {
                       placeholder='Father Name'
                       className='w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent'
                       required
+                    // disabled={isGenerating}
                     />
                   </div>
                   <div className="w-72 sm:w-72">
@@ -458,6 +746,7 @@ export const NoticePage: React.FC = () => {
                       placeholder="Address"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     />
                   </div>
                   <div className="w-72 sm:w-72">
@@ -475,6 +764,7 @@ export const NoticePage: React.FC = () => {
                       placeholder="Email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     />
                   </div>
                   <div className="w-72 sm:w-72">
@@ -492,24 +782,24 @@ export const NoticePage: React.FC = () => {
                       placeholder="Phone"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                       required
+                    // disabled={isGenerating}
                     />
                   </div>
                   {formData.recipients.length > 1 && (
-
                     <button
                       type="button"
-                      className="absolute top-0 right-4 mb-4 flex items-center gap-1 text-red-600 hover:text-white hover:bg-red-500 border border-red-200 bg-red-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                      className="absolute top-0 right-4 mb-4 flex items-center gap-1 text-red-600 hover:text-white hover:bg-red-500 border border-red-200 bg-red-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 disabled:opacity-50"
                       onClick={() => handleRemoveRecipient(idx)}
-                      aria-label="Remove incident"
+                      aria-label="Remove recipient"
+                    // disabled={isGenerating}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
-
-
                   )}
                 </div>
               ))}
             </div>
+
             {/* Council Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Council Details</h3>
@@ -529,6 +819,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[351px]">
@@ -546,6 +837,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Address"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[348px]">
@@ -563,6 +855,7 @@ export const NoticePage: React.FC = () => {
                     placeholder="Email"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[348px]">
@@ -580,10 +873,12 @@ export const NoticePage: React.FC = () => {
                     placeholder="Phone"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
                     required
+                  // disabled={isGenerating}
                   />
                 </div>
               </div>
             </div>
+
             {/* Contributor Details */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-3">Contributor Details</h3>
@@ -602,6 +897,7 @@ export const NoticePage: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[351px]">
@@ -618,6 +914,7 @@ export const NoticePage: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Address"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[348px]">
@@ -634,6 +931,7 @@ export const NoticePage: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Email"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  // disabled={isGenerating}
                   />
                 </div>
                 <div className="w-[348px]">
@@ -650,11 +948,11 @@ export const NoticePage: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Phone"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#000000] focus:border-transparent"
+                  // disabled={isGenerating}
                   />
                 </div>
               </div>
             </div>
-
 
             {/* Incidents */}
             <div>
@@ -677,18 +975,56 @@ export const NoticePage: React.FC = () => {
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D6A767] focus:border-transparent"
                 required
+              // disabled={isGenerating}
               />
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-[#D6A767] text-white py-3 rounded-md hover:bg-[#c49655] transition-colors"
+              // disabled={isGenerating}
+              className="w-full bg-[#D6A767] text-white py-3 rounded-md hover:bg-[#c49655] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
-              Generate Notice
+              {isGenerating ? (
+                <>
+                  <Loader className="h-5 w-5 animate-spin" />
+                  <span>Generating Notice...</span>
+                </>
+              ) : (
+                <span>Generate Notice</span>
+              )}
             </button>
           </form>
         </div>
       </div>
+
+      {/* Warning Modal */}
+      <WarningModal
+        warnings={warnings}
+        isOpen={showWarningModal}
+        onClose={handleCloseWarningModal}
+        onProceed={handleProceedWithWarnings}
+        isLoading={isGenerating}
+      />
+
+      {/* Debug Info - Remove in production */}
+      {/* <div style={{
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        background: 'rgba(0,0,0,0.8)',
+        color: 'white',
+        padding: '10px',
+        borderRadius: '5px',
+        fontSize: '12px',
+        maxWidth: '300px'
+      }}>
+        <div>🔄 Generating: {isGenerating ? 'YES' : 'NO'}</div>
+        <div>⚠️ Warnings: {warnings.length}</div>
+        <div>🔔 Modal: {showWarningModal ? 'OPEN' : 'CLOSED'}</div>
+        <div>📋 Litigation: {formData.litigation_type || 'None'}</div>
+        <div>📋 Sub-type: {formData.sub_litigation_type || 'None'}</div>
+      </div> */}
     </div>
   );
 };

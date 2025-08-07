@@ -8,6 +8,8 @@ import time
 from fastapi.responses import FileResponse
 from reportlab.lib.styles import str2alignment
 
+from backend.warning_validator import NoticeWarningValidator
+from backend.ipcindexer import get_litigation_aware_recommendations, LitigationAwareIPCRecommender
 from backend.generator import generate_legal_notice, get_recommendations, save_to_pdf, send_notice_email, share_notice_whatsapp, generate_legal_notice_groq
 from backend.ipc_indexer import IPCRetriever, get_ipc_recommendations
 from backend.ipc_indexer import SemanticEmbedder, load_ipc_data
@@ -60,7 +62,7 @@ class WarningAlert(BaseModel):
     type: str
     title: str
     message: str
-    severity: str2alignment
+    severity: str
 
 class NoticeResponse(BaseModel):
     notice_text: str
@@ -68,6 +70,8 @@ class NoticeResponse(BaseModel):
     warnings: Optional[List[WarningAlert]] = []
 
 class IPCRequestFlexible(BaseModel):
+    litigation_type: str
+    sub_litigation_type: Optional[str] = None
     subject: str
     incidents: List[Union[str, Incident]]
 
@@ -87,41 +91,58 @@ class WhatsAppRequest(BaseModel):
 
 # --------------------- Routes ---------------------
 
+
+
 @router.post("/ipc-recommendations", response_model=List[IPCRecommendation])
 async def ipc_recommendations(request: IPCRequestFlexible):
     try:
-        print("Received request for IPC recommendations")
-
+        print(f"🔍 Getting IPC recommendations for: {request.litigation_type}/{request.sub_litigation_type}")
+        
         # Normalize incidents
-        normalized = [
-            i if isinstance(i, str) else i.description for i in request.incidents
-        ]
-
-        embedder = SemanticEmbedder()
-        df = load_ipc_data("ipc_sect1ons.csv")
-        retriever = IPCRetriever(embedder, df)
-        results = retriever.recommend(query=" ".join([request.subject] + normalized), top_k=5)
-
+        incident_descriptions = []
+        for incident in request.incidents:
+            if isinstance(incident, str):
+                incident_descriptions.append(incident)
+            else:
+                incident_descriptions.append(incident.description)
+        
+        # Get litigation-aware recommendations
+        recommendations = get_litigation_aware_recommendations(
+            litigation_type=request.litigation_type,
+            sub_type=request.sub_litigation_type or "",
+            subject=request.subject,
+            incidents=incident_descriptions,
+            top_k=5
+        )
+        
+        print(f"✅ Found {len(recommendations)} recommendations")
+        
         return [
-            get_ipc_recommendations(
-                section=str(row['Sections']),
-                title=row.get('Acts', 'IPC'),
-                description=str(),
-                Keywords=row.get('Keywords', '')
+            IPCRecommendation(
+                section=rec['section'],
+                act=rec['act'],
+                title=rec['title'],
+                description=rec['description'],
+                applicability=rec['applicability']
             )
-            for _, row in results.iterrows()
+            for rec in recommendations
         ]
+        
     except Exception as e:
-        print(f"Error in ipc_recommendations endpoint: {str(e)}")
+        print(f"❌ Error in ipc_recommendations endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-from backend.warning_validator import NoticeWarningValidator
+
+
 
 @router.post("/generate-notice", response_model=NoticeResponse)
 async def generate_notice(request: NoticeRequest):
     try:
-        print("Received request for notice generation")
-
+        print("📝 Received request for notice generation")
+        
+        # Add warning validation if needed
+        from backend.warning_validator import NoticeWarningValidator
+        
         # Convert request to dict for warning validation
         request_dict = {
             'sender_name': request.sender_name,
@@ -134,30 +155,11 @@ async def generate_notice(request: NoticeRequest):
         
         # Validate warnings based on litigation type
         warnings = []
-        if request.litigation_type.lower() == 'cheque bounce' or 'cheque' in request.litigation_type.lower():
+        if any(keyword in (request.litigation_type + ' ' + (request.sub_litigation_type or '')).lower() 
+               for keyword in ['cheque bounce', 'cheque', 'negotiable']):
             warnings = NoticeWarningValidator.validate_cheque_bounce_warnings(request_dict)
         
-        # Check for duplicate cases
-        recipient = request.recipients[0] if request.recipients else None
-        if recipient and NoticeWarningValidator.check_duplicate_case(
-            request.sender_name, recipient.recipient_name
-        ):
-            warnings.append({
-                'type': 'duplicate_case',
-                'title': 'Duplicate Case Warning',
-                'message': f"Dear {request.sender_name}, there is already a pending case against {recipient.recipient_name}. Fresh legal action cannot be initiated against the same person.",
-                'severity': 'high'
-            })
-        
-        # Validate standing
-        if not NoticeWarningValidator.validate_party_standing({'name': request.sender_name}):
-            warnings.append({
-                'type': 'standing_issue',
-                'title': 'Legal Standing Warning',
-                'message': f"Dear {request.sender_name}, you may not be a relevant party to this suit. You must be a necessary party (agent, authorized representative, etc.) to initiate legal action.",
-                'severity': 'high'
-            })
-
+        # Get first recipient
         recipient = request.recipients[0] if request.recipients else Recipient(
             recipient_name="",
             recipientFather_name="",
@@ -165,7 +167,7 @@ async def generate_notice(request: NoticeRequest):
             recipient_mail="",
             recipient_phone=""
         )
-
+        
         # Generate notice text
         notice_text = generate_legal_notice(
             litigation_type=request.litigation_type,
@@ -205,43 +207,45 @@ async def generate_notice(request: NoticeRequest):
             } for incident in request.incidents],
             conclusion=request.conclusion
         )
-
-        print("Notice generated successfully")
-
-        # IPC Recommendations
-        print("Getting IPC recommendations")
-        embedder = SemanticEmbedder()
-        df = load_ipc_data("ipc_sect1ons.csv")
-        retriever = IPCRetriever(embedder, df)
-
-        # Build query text and filter out empty strings
+        
+        print("✅ Notice generated successfully")
+        
+        # Get litigation-aware IPC recommendations
+        print("🔍 Getting IPC recommendations")
         incident_descriptions = [i.description for i in request.incidents if i.description.strip()]
-        query_text = " ".join(filter(None, [request.subject] + incident_descriptions))
-
-        # Only get recommendations if we have some text to query
-        if query_text.strip():
-            ipc_results = retriever.recommend(query=query_text) #top_k=5)
-            ipc_recommendations = [
-                get_recommendations(
-                    section=str(row['Sections']),
-                    title=row.get('Acts', 'IPC'), 
-                    description=row.get('Keywords','')
-                )
-                for _, row in ipc_results.iterrows()
-            ]
-        else:
-            ipc_recommendations = []  # Return empty list if no valid query text
-
-        print("IPC recommendations generated successfully")
-
+        
+        ipc_recommendations = get_litigation_aware_recommendations(
+            litigation_type=request.litigation_type,
+            sub_type=request.sub_litigation_type or "",
+            subject=request.subject,
+            incidents=incident_descriptions,
+            top_k=5
+        )
+        
+        print(f"✅ Found {len(ipc_recommendations)} IPC recommendations")
+        
+        # Format IPC recommendations for response
+        formatted_recommendations = [
+            IPCRecommendation(
+                section=rec['section'],
+                act=rec['act'],
+                title=rec['title'],
+                description=rec['description'],
+                applicability=rec['applicability']
+            )
+            for rec in ipc_recommendations
+        ]
+        
         return NoticeResponse(
             notice_text=notice_text,
-            ipc_recommendations=ipc_recommendations
+            ipc_recommendations=formatted_recommendations,
+            warnings=warnings
         )
-
+        
     except Exception as e:
-        print(f"Error in generate_notice endpoint: {str(e)}")
+        print(f"❌ Error in generate_notice endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @router.get("/litigation-fields/{litigation_type}")
